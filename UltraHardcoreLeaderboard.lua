@@ -8,7 +8,7 @@ local addonIcon = LibStub("LibDBIcon-1.0")
 local addonLDB = LibStub("LibDataBroker-1.1"):NewDataObject("UltraHardcoreLeaderboard", {
     type = "data source",
     text = "UltraHardcore Leaderboard",
-    icon = "Interface\\icons\\inv_misc_bone_humanskull_02.tga",
+    icon = "Interface\\AddOns\\UltraHardcoreLeaderboard\\Images\\UltraHardcoreLeaderbaordIcon",
     OnClick = function(self, btn)
         if btn == "LeftButton" then
             if FRAME:IsShown() then
@@ -621,4 +621,5 @@ SlashCmdList.UHLB = function(msg)
     end
     return
   end
+
 end
