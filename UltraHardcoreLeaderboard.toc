@@ -5,11 +5,11 @@
 ## Notes: Guild live leaderboard for UltraHardcore players
 ## Dependencies: UltraHardcore
 ## SavedVariables: UltraHardcoreLeaderboardDB
-## IconTexture: Interface\Icons\inv_misc_bone_humanskull_02
+## IconTexture: Interface\AddOns\UltraHardcoreLeaderboard\Images\UltraHardcoreLeaderbaordIcon
 
 embeds.xml
 
 UltraHardcoreLeaderboard.lua
-Utils/CacheSystem.lua
-Utils/NetworkSystems.lua
-Utils/Data.lua
+CacheSystem.lua
+NetworkSystems.lua
+Data.lua
