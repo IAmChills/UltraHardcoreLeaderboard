@@ -1,0 +1,15 @@
+## Interface: 11507
+## Title: UltraHardcoreLeaderboard
+## Author: Chills
+## Version: 1.0.8
+## Notes: Guild live leaderboard for UltraHardcore players
+## Dependencies: UltraHardcore
+## SavedVariables: UltraHardcoreLeaderboardDB
+## IconTexture: Interface\Icons\inv_misc_bone_humanskull_02
+
+embeds.xml
+
+UltraHardcoreLeaderboard.lua
+Utils/CacheSystem.lua
+Utils/NetworkSystems.lua
+Utils/Data.lua
