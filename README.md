@@ -19,7 +19,7 @@ Ultra Hardcore Live Leaderboard is a companion addon to the World of Warcraft Cl
   - **Stats**: Lowest health, elites slain, enemies slain, XP gained without addon
 ![Leaderbaord](https://media.forgecdn.net/attachments/1343/760/leaderboard-png.png "Leaderboard")
 - Right click for context menu (whisper, invite)
-- A minimap button ![Icon](https://media.forgecdn.net/attachments/1342/638/minimapbutton-png.png "Icon")
+- A minimap button
 - A tooltip is displayed for each player to detail which options are currently enabled
 
 ![Tooltip](https://media.forgecdn.net/attachments/1342/639/tooltip-png.png "Tooltip")
