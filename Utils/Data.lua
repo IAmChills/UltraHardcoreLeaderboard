@@ -97,26 +97,5 @@ function Data:BuildRowsForUI(seen)
         end
     end
 
-  table.sort(rows, function(a, b)
-    -- 0) Online first (true > false)
-    local ao = a.online and 1 or 0
-    local bo = b.online and 1 or 0
-    if ao ~= bo then return ao > bo end
-
-    -- 1) Level (higher first)
-    if a.level ~= b.level then return a.level > b.level end
-
-    -- 2) Name (A → Z, case-insensitive if you prefer)
-    local an = (a.name or "")
-    local bn = (b.name or "")
-    -- an, bn = an:lower(), bn:lower()  -- uncomment for case-insensitive sort
-    if an ~= bn then return an < bn end
-
-    -- 3) Last seen (more recent first: smaller seconds-since → higher rank)
-    local aLast = a.lastSeenSec or math.huge
-    local bLast = b.lastSeenSec or math.huge
-    return aLast < bLast
-  end)
-
   return rows
 end
