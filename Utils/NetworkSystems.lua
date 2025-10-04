@@ -231,7 +231,7 @@ function Network:SendSnapReq()
   self._snapGotData = false
   for idx, who in ipairs(peers) do
     C_Timer.After(0.4 * idx, function()
-      if self._snapGotData then return end  -- stop scheduling further whispers
+      --if self._snapGotData then return end  -- stop scheduling further whispers
       addon:SendCommMessage(PREFIX, payload, "WHISPER", who)
       D("Sent SNAP_REQ to", who, "since", since)
     end)
@@ -404,3 +404,4 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
       if changed and addon.RefreshUIIfVisible then addon:RefreshUIIfVisible() end
     end
 end
+
