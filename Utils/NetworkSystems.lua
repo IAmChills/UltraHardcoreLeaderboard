@@ -1,3 +1,4 @@
+local ADDON_NAME      = ...
 local addon           = LibStub("AceAddon-3.0"):GetAddon("UltraHardcoreLeaderboard")
 local Network         = addon:NewModule("Network", "AceComm-3.0") -- uses AceComm API if you want
 local AceSerializer   = LibStub("AceSerializer-3.0")
@@ -46,6 +47,7 @@ local function BuildRecordFromPlayer()
     xpGainedWithoutAddon = stats.xpGainedWithoutAddon or 0,
     preset               = presetOnly or "",
     version              = GetAddOnMetadata(BASE_ADDON_NAME, "Version") or "0.0.0",
+    LVersion             = GetAddOnMetadata(ADDON_NAME , "Version") or "0.0.0",
     customSettings       = (UHCLB_GetLocalSettingsIdList and UHCLB_GetLocalSettingsIdList()) or nil,
     ts                   = Now(),
     guild                = (GetGuildInfo("player") or ""),
@@ -260,6 +262,7 @@ function Network:SendOfflineDelta()
     level = rec.level or 0,
     class = rec.class or "UNKNOWN",
     version = rec.version or "0.0.0",
+    LVersion = rec.LVersion or "0.0.0",
     lowestHealth = rec.lowestHealth or 100,
     elitesSlain = rec.elitesSlain or 0,
     enemiesSlain = rec.enemiesSlain or 0,
@@ -297,6 +300,7 @@ function Network:SendDelta()
     level = rec.level or 0,
     class = rec.class or "UNKNOWN",
     version = rec.version or "0.0.0",
+    LVersion = rec.LVersion or "0.0.0",
     lowestHealth = rec.lowestHealth or 100,
     elitesSlain = rec.elitesSlain or 0,
     enemiesSlain = rec.enemiesSlain or 0,
@@ -348,6 +352,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             level = tbl.rec.level or 0,
             class = tbl.rec.class or "UNKNOWN",
             version = tbl.rec.version or "0.0.0",
+            LVersion = tbl.rec.LVersion or "0.0.0",
             lowestHealth = tonumber(string.format("%.2f", tbl.rec.lowestHealth or 100.00)),
             elitesSlain = tbl.rec.elitesSlain or 0,
             enemiesSlain = tbl.rec.enemiesSlain or 0,
@@ -382,6 +387,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             level = rec.level or 0,
             class = rec.class or "UNKNOWN",
             version = rec.version or "0.0.0",
+            LVersion = rec.LVersion or "0.0.0",
             lowestHealth = tonumber(string.format("%.2f", rec.lowestHealth or 100.00)),
             elitesSlain = rec.elitesSlain or 0,
             enemiesSlain = rec.enemiesSlain or 0,
