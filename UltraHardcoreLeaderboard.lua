@@ -257,12 +257,12 @@ ev:SetScript("OnEvent", function(_, e, key, state)
             net:SendOfflineDelta()
         end
 
-    elseif e == "MODIFIER_STATE_CHANGED" then
-        -- key: "LALT", "RALT", "LSHIFT", "RSHIFT", "LCTRL", "RCTRL"
-        -- state: 1 (pressed) or 0 (released)
-        if key == "LALT" and FRAME and FRAME:IsShown() then
-            FRAME.RefreshLeaderboardUI()
-        end
+	elseif e == "MODIFIER_STATE_CHANGED" then
+	  local net = addon:GetModule("Network", true)
+	  if key == "LALT" and FRAME and FRAME:IsShown() and net and net:IsDebug() then
+	    FRAME.RefreshLeaderboardUI()
+	  end
+	end
 
     else
         -- Coalesce other events into a short delay
@@ -764,3 +764,4 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
+
