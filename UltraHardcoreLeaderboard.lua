@@ -43,7 +43,7 @@ end
 local settingsCheckboxOptions = {
     { id = 1, name = "Hide Player Frame", dbSettingsValueName = "hidePlayerFrame" },
     { id = 2, name = "Hide Minimap", dbSettingsValueName = "hideMinimap" },
-    { id = 3, name = "Use Custom Buff Frame", dbSettingsValueName = "hideBuffFrame" },
+    --{ id = 3, name = "Use Custom Buff Frame", dbSettingsValueName = "hideBuffFrame" },
     { id = 4, name = "Hide Target Frame", dbSettingsValueName = "hideTargetFrame" },
     { id = 5, name = "Hide Target Tooltips", dbSettingsValueName = "hideTargetTooltip" },
     { id = 6, name = "Death Indicator (Tunnel Vision)", dbSettingsValueName = "showTunnelVision" },
@@ -66,7 +66,6 @@ function GetPresetAndTooltip(playerName)
         { -- Lite
             hidePlayerFrame = true,
             hideMinimap = false,
-            hideBuffFrame = false,
             hideTargetFrame = false,
             hideTargetTooltip = false,
             showTunnelVision = true,
@@ -85,7 +84,6 @@ function GetPresetAndTooltip(playerName)
         { -- Recommended
             hidePlayerFrame = true,
             hideMinimap = true,
-            hideBuffFrame = true,
             hideTargetFrame = true,
             hideTargetTooltip = true,
             showTunnelVision = true,
@@ -104,7 +102,6 @@ function GetPresetAndTooltip(playerName)
         { -- Ultra
             hidePlayerFrame = true,
             hideMinimap = true,
-            hideBuffFrame = true,
             hideTargetFrame = true,
             hideTargetTooltip = true,
             showTunnelVision = true,
@@ -150,7 +147,7 @@ function GetPresetAndTooltip(playerName)
         for i, presetSettings in ipairs(presets) do
             local isMatch = true
             for key, value in pairs(presetSettings) do
-                if settings[key] ~= value then
+                if (settings[key] or false) ~= value then
                     isMatch = false
                     break
                 end
@@ -234,7 +231,9 @@ ev:RegisterEvent("PLAYER_LOGIN")
 ev:RegisterEvent("PLAYER_LEVEL_UP")
 ev:RegisterEvent("PLAYER_DEAD")
 ev:RegisterEvent("PLAYER_LOGOUT")
-ev:SetScript("OnEvent", function(_, e)
+ev:RegisterEvent("MODIFIER_STATE_CHANGED")
+
+ev:SetScript("OnEvent", function(_, e, key, state)
     if e == "PLAYER_LOGIN" then
         -- Initialize cache
         local cache = addon:GetModule("Cache", true)
@@ -251,16 +250,26 @@ ev:SetScript("OnEvent", function(_, e)
                 net:SendSnapReq()
             end)
         end
+
     elseif e == "PLAYER_LOGOUT" then
         local net = addon:GetModule("Network", true)
         if net and net.SendOfflineDelta then
             net:SendOfflineDelta()
         end
+
+    elseif e == "MODIFIER_STATE_CHANGED" then
+        -- key: "LALT", "RALT", "LSHIFT", "RSHIFT", "LCTRL", "RCTRL"
+        -- state: 1 (pressed) or 0 (released)
+        if key == "LALT" and FRAME and FRAME:IsShown() then
+            FRAME.RefreshLeaderboardUI()
+        end
+
     else
         -- Coalesce other events into a short delay
         C_Timer.After(2, SendAnnounce)
     end
 end)
+
 
 function addon:OnDisable()
   ev:UnregisterAllEvents()
@@ -278,6 +287,10 @@ C_Timer.NewTicker(60, function()
   end
 end)
 
+local function UHLB_ShouldShowLVersion()
+    return IsLeftAltKeyDown()
+end
+
 local ROW_HEIGHT = 18
 local VISIBLE_ROWS = 18
 local COLS = {
@@ -286,12 +299,115 @@ local COLS = {
     { key = "class",   title = "Class",      width = 50,  align = "CENTER" },
     { key = "preset",  title = "Preset",     width = 80,  align = "CENTER" },
     { key = "seen",    title = "Seen",       width = 50,  align = "CENTER" },
-    { key = "version", title = "Version",    width = 50,  align = "CENTER" },
-    { key = "lowestHealth", title = "Lowest HP", width = 70, align = "CENTER" },
+    { key = "version", title = "Version",    width = 60,  align = "CENTER" },
+    { key = "lowestHealth", title = "Lowest HP", width = 80, align = "CENTER" },
     { key = "elitesSlain", title = "Elites", width = 50, align = "CENTER" },
-    { key = "enemiesSlain", title = "Enemies", width = 50, align = "CENTER" },
-    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 90, align = "CENTER" },
+    { key = "enemiesSlain", title = "Enemies", width = 70, align = "CENTER" },
+    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 100, align = "CENTER" },
 }
+
+local sortState = {
+    key = nil,
+    asc = true
+}
+
+local function isDead(e)
+    local v = e and e.lowestHealth
+    if v == nil then
+        return false
+    end
+    if type(v) == "string" then
+        v = v:gsub("%%", "")
+    end
+    v = tonumber(v) or 0
+    return v <= 0
+end
+
+local function valueForSort(e, key)
+    if key == "seen" then
+        return tonumber(e.lastSeenSec) or math.huge
+    elseif key == "name" or key == "class" or key == "preset" or key == "version" then
+        return tostring(e[key] or ""):lower()
+    elseif key == "online" then
+        return e.online and 1 or 0
+    else
+        return tonumber(e[key]) or 0
+    end
+end
+
+local function DefaultCompare(a, b)
+    -- 0) Dead (0% lowest HP) always at the bottom
+    -- local ad, bd = isDead(a), isDead(b)
+    -- if ad ~= bd then
+    --     return not ad
+    -- end
+
+    -- 1) Online first (true > false)
+    local ao = a.online and 1 or 0
+    local bo = b.online and 1 or 0
+    if ao ~= bo then
+        return ao > bo
+    end
+
+    -- 2) Level (higher first)
+    if a.level ~= b.level then
+        return (a.level or 0) > (b.level or 0)
+    end
+
+    -- 3) Name (A → Z, case-insensitive)
+    local an = tostring(a.name or ""):lower()
+    local bn = tostring(b.name or ""):lower()
+    if an ~= bn then
+        return an < bn
+    end
+
+    -- 4) Last seen (more recent first: smaller seconds-since → higher rank)
+    local aLast = a.lastSeenSec or math.huge
+    local bLast = b.lastSeenSec or math.huge
+    return aLast < bLast
+end
+
+local function ApplySort(entries)
+    if sortState.key then
+        local key, asc = sortState.key, sortState.asc
+        table.sort(entries, function(a, b)
+            -- Dead-bottom rule still applies even for header sorts
+            -- local ad, bd = isDead(a), isDead(b)
+            -- if ad ~= bd then
+            --     return not ad
+            -- end
+
+            local va, vb = valueForSort(a, key), valueForSort(b, key)
+            if va == vb then
+                -- stable-ish tiebreakers: Level desc, then Name asc
+                if (a.level or 0) ~= (b.level or 0) then
+                    return (a.level or 0) > (b.level or 0)
+                end
+                return tostring(a.name or ""):lower() < tostring(b.name or ""):lower()
+            end
+            if asc then
+                return va < vb
+            else
+                return va > vb
+            end
+        end)
+    else
+        table.sort(entries, DefaultCompare)
+    end
+end
+
+local function UpdateHeaderArrows()
+    if not HEADER then
+        return
+    end
+    for i, col in ipairs(COLS) do
+        local txt = col.title
+        if sortState.key == col.key then
+            txt = txt .. (sortState.asc and " ▲" or " ▼")
+        end
+        HEADER[i]:SetText(txt)
+    end
+end
 
 local UHLB_ContextMenu
 local UHLB_ContextTarget
@@ -362,7 +478,7 @@ end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(770, 420)
+    f:SetSize(820, 420)
     f:SetPoint("CENTER")
     f:Hide()
 
@@ -395,6 +511,20 @@ local function CreateMainFrame()
         fs:SetJustifyH(col.align or "CENTER")
         fs:SetJustifyV("MIDDLE")
         fs:SetText(col.title)
+        fs:EnableMouse(true)
+        fs:SetScript("OnMouseUp", function(_, button)
+            if button ~= "LeftButton" then return end
+            if sortState.key == col.key then
+                sortState.asc = not sortState.asc
+            else
+                sortState.key = col.key
+                -- Simple convention: numbers default desc for first click, strings asc
+                local numeric = (col.key ~= "name" and col.key ~= "class" and col.key ~= "preset" and col.key ~= "version" and col.key ~= "seen")
+                sortState.asc = not numeric
+            end
+            UpdateHeaderArrows()
+            f.RefreshLeaderboardUI()
+        end)
         HEADER[i] = fs
         x = x + col.width + 10
     end
@@ -472,22 +602,33 @@ local function CreateMainFrame()
         local rows = data and data:BuildRowsForUI(seen) or {}
         local entries = {}
         for _, r in ipairs(rows) do
-        local preset, tooltipText = GetPresetAndTooltip(r.name)
-        table.insert(entries, {
-            name = r.name,
-            level = r.level,
-            class = r.class,
-            lowestHealth = r.lowestHealth,
-            elitesSlain = r.elitesSlain,
-            enemiesSlain = r.enemiesSlain,
-            xpGainedWithoutAddon = r.xpGainedWithoutAddon,
-            preset = preset,
-            seen = r.lastSeenText,
-            version = r.version,
-            tooltipText = tooltipText,
-            online = r.online,
-        })
+            local preset, tooltipText = GetPresetAndTooltip(r.name)
+            local net = addon:GetModule("Network", true)
+            local sv = seen[r.name]
+            local shownVersion
+            if IsLeftAltKeyDown() and net and net:IsDebug() then
+                shownVersion = (sv and sv.LVersion) or r.version
+            else
+                shownVersion = r.version
+            end
+            table.insert(entries, {
+                name = r.name,
+                level = r.level,
+                class = r.class,
+                lowestHealth = r.lowestHealth,
+                elitesSlain = r.elitesSlain,
+                enemiesSlain = r.enemiesSlain,
+                xpGainedWithoutAddon = r.xpGainedWithoutAddon,
+                preset = preset,
+                seen = r.lastSeenText,
+                version = shownVersion,
+                tooltipText = tooltipText,
+                online = r.online,
+                lastSeenSec = r.lastSeenSec,
+            })
         end
+
+        ApplySort(entries)
 
         for _, row in ipairs(leaderboardRows) do row:Hide() end
         local totalHeight = #entries * ROW_HEIGHT
