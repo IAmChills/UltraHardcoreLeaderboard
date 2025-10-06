@@ -262,7 +262,6 @@ ev:SetScript("OnEvent", function(_, e, key, state)
 	  if key == "LALT" and FRAME and FRAME:IsShown() and net and net:IsDebug() then
 	    FRAME.RefreshLeaderboardUI()
 	  end
-	end
 
     else
         -- Coalesce other events into a short delay
@@ -764,4 +763,5 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
+
 
