@@ -54,7 +54,7 @@ local settingsCheckboxOptions = {
     { id = 11, name = "Hide Action Bars when not resting", dbSettingsValueName = "hideActionBars" },
     { id = 12, name = "Hide Group Health", dbSettingsValueName = "hideGroupHealth" },
     { id = 13, name = "Pets Die Permanently", dbSettingsValueName = "petsDiePermanently" },
-    { id = 14, name = "Show Full Health Indicator", dbSettingsValueName = "showFullHealthIndicator" },
+    --{ id = 14, name = "Show Full Health Indicator", dbSettingsValueName = "showFullHealthIndicator" },
     { id = 15, name = "Disable Nameplate Information", dbSettingsValueName = "disableNameplateHealth" },
     { id = 16, name = "Show Incoming Damage Effect", dbSettingsValueName = "showIncomingDamageEffect" },
     { id = 17, name = "Breath Indicator (Red Overlay)", dbSettingsValueName = "hideBreathIndicator" },
@@ -76,7 +76,7 @@ function GetPresetAndTooltip(playerName)
             hideActionBars = false,
             hideGroupHealth = false,
             petsDiePermanently = false,
-            showFullHealthIndicator = false,
+            --showFullHealthIndicator = false,
             disableNameplateHealth = false,
             showIncomingDamageEffect = false,
             hideBreathIndicator = false,
@@ -94,7 +94,7 @@ function GetPresetAndTooltip(playerName)
             showCritScreenMoveEffect = false,
             hideActionBars = false,
             petsDiePermanently = false,
-            showFullHealthIndicator = false,
+            --showFullHealthIndicator = false,
             disableNameplateHealth = true,
             showIncomingDamageEffect = false,
             hideBreathIndicator = true,
@@ -106,7 +106,7 @@ function GetPresetAndTooltip(playerName)
             hideTargetTooltip = true,
             showTunnelVision = true,
             tunnelVisionMaxStrata = true,
-            showFullHealthIndicator = true,
+            --showFullHealthIndicator = true,
             disableNameplateHealth = true,
             showIncomingDamageEffect = true,
             hideQuestFrame = true,
@@ -763,5 +763,6 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
+
 
 
