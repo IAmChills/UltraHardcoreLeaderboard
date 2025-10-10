@@ -713,6 +713,11 @@ local function CreateMainFrame()
             local isOffline = not row.online
 
             local r,g,b = isOffline and 0.65 or 1, isOffline and 0.65 or 1, isOffline and 0.65 or 1
+
+			if isDead(e) then
+                r, g, b = 0.95, 0.26, 0.21
+            end
+			
             for _, fs in ipairs(row.cols) do
             fs:SetTextColor(r, g, b)
             end
@@ -763,6 +768,7 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
+
 
 
 
