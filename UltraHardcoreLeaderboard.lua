@@ -689,11 +689,20 @@ local function CreateMainFrame()
                 leaderboardRows[i] = row
             end
 
-            local nameText = e.name
-            if string.len(nameText) > 18 then
-                nameText = string.sub(nameText, 1, 16) .. ".."
+            local base = e.name
+            local maxChars = 18
+
+            if string.len(base) > maxChars then
+            base = string.sub(base, 1, maxChars - 2) .. "."
             end
-            row.cols[1]:SetText(nameText)
+
+            -- Prefix a skull icon for dead players using an inline texture
+            if isDead(e) then
+            local skull = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:12:12:0:0|t "
+            base = skull .. base
+            end
+
+            row.cols[1]:SetText(base)
             row.cols[2]:SetText(e.level)
             row.cols[3]:SetText(e.class)
             row.cols[4]:SetText(e.preset)
@@ -768,6 +777,7 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
+
 
 
 
