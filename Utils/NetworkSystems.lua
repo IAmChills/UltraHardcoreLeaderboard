@@ -398,7 +398,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             guild = tbl.rec.guild or "",
             realm = tbl.rec.realm or "",
             faction = tbl.rec.faction or "",
-            dead = tbl.rec.dead or false,,
+            dead = tbl.rec.dead or false,
         }
         if changed and addon.RefreshUIIfVisible then
           addon:RefreshUIIfVisible()
@@ -441,4 +441,5 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
       if changed and addon.RefreshUIIfVisible then addon:RefreshUIIfVisible() end
     end
 end
+
 
