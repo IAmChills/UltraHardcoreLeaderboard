@@ -251,6 +251,41 @@ function Network:ScheduleDelta(delay)
   end)
 end
 
+function Network:MarkDeadAndSend()
+  local rec = BuildRecordFromPlayer()
+  rec.dead = true
+  rec.lowestHealth = 0  -- still set, but UI won’t rely on this anymore
+
+  local cache = addon:GetModule("Cache", true)
+  if cache then cache:Upsert(rec) end
+
+  seen[rec.name] = {
+    level = rec.level or 0,
+    class = rec.class or "UNKNOWN",
+    version = rec.version or "0.0.0",
+    LVersion = rec.LVersion or "0.0.0",
+    lowestHealth = rec.lowestHealth or 0,
+    elitesSlain = rec.elitesSlain or 0,
+    enemiesSlain = rec.enemiesSlain or 0,
+    xpGainedWithoutAddon = rec.xpGainedWithoutAddon or 0,
+    preset = rec.preset or "Custom",
+    last = rec.ts or ((GetServerTime and GetServerTime()) or time()),
+    customSettings = rec.customSettings,
+    guild = rec.guild or "",
+    realm = rec.realm or "",
+    faction = rec.faction or "",
+    dead = true,
+  }
+
+  if addon.RefreshUIIfVisible then addon:RefreshUIIfVisible() end
+
+  local payload = encode({ type = "DELTA", rec = rec })
+  if payload then
+    addon:SendCommMessage(PREFIX, payload, "GUILD")
+    D("Sent DEAD DELTA for", rec.name, "ts", rec.ts)
+  end
+end
+
 function Network:SendOfflineDelta()
   local rec = BuildRecordFromPlayer()
   rec.offline = true
@@ -363,6 +398,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             guild = tbl.rec.guild or "",
             realm = tbl.rec.realm or "",
             faction = tbl.rec.faction or "",
+            dead = tbl.rec.dead or false,,
         }
         if changed and addon.RefreshUIIfVisible then
           addon:RefreshUIIfVisible()
@@ -396,6 +432,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             last = rec.ts or Now(),
             customSettings = rec.customSettings,
             guild = rec.guild or "", realm = rec.realm or "", faction = rec.faction or "",
+            dead = rec.dead or false,
           }
         end
       end
