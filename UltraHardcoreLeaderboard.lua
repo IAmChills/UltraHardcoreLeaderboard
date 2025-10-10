@@ -41,23 +41,24 @@ function addon:OnInitialize()
 end
 
 local settingsCheckboxOptions = {
-    { id = 1, name = "Hide Player Frame", dbSettingsValueName = "hidePlayerFrame" },
+    { id = 1, name = "UHC Player Frame", dbSettingsValueName = "hidePlayerFrame" },
     { id = 2, name = "Hide Minimap", dbSettingsValueName = "hideMinimap" },
     --{ id = 3, name = "Use Custom Buff Frame", dbSettingsValueName = "hideBuffFrame" },
     { id = 4, name = "Hide Target Frame", dbSettingsValueName = "hideTargetFrame" },
     { id = 5, name = "Hide Target Tooltips", dbSettingsValueName = "hideTargetTooltip" },
     { id = 6, name = "Death Indicator (Tunnel Vision)", dbSettingsValueName = "showTunnelVision" },
     { id = 7, name = "Tunnel Vision Covers Everything", dbSettingsValueName = "tunnelVisionMaxStrata" },
-    { id = 8, name = "Hide Quest UI", dbSettingsValueName = "hideQuestFrame" },
+    --{ id = 8, name = "Hide Quest UI", dbSettingsValueName = "hideQuestFrame" },
     { id = 9, name = "Show Dazed Effect", dbSettingsValueName = "showDazedEffect" },
     { id = 10, name = "Show Crit Screen Shift Effect", dbSettingsValueName = "showCritScreenMoveEffect" },
     { id = 11, name = "Hide Action Bars when not resting", dbSettingsValueName = "hideActionBars" },
-    { id = 12, name = "Hide Group Health", dbSettingsValueName = "hideGroupHealth" },
+    { id = 12, name = "UHC Party Frames", dbSettingsValueName = "hideGroupHealth" },
     { id = 13, name = "Pets Die Permanently", dbSettingsValueName = "petsDiePermanently" },
     --{ id = 14, name = "Show Full Health Indicator", dbSettingsValueName = "showFullHealthIndicator" },
-    { id = 15, name = "Disable Nameplate Information", dbSettingsValueName = "disableNameplateHealth" },
+    { id = 15, name = "Disable Nameplates", dbSettingsValueName = "disableNameplateHealth" },
     { id = 16, name = "Show Incoming Damage Effect", dbSettingsValueName = "showIncomingDamageEffect" },
-    { id = 17, name = "Breath Indicator (Red Overlay)", dbSettingsValueName = "hideBreathIndicator" },
+    { id = 17, name = "Breath Indicator", dbSettingsValueName = "hideBreathIndicator" },
+    { id = 18, name = "Show Incoming Healing Effect", dbSettingsValueName = "showHealingIndicator" },
 }
 
 function GetPresetAndTooltip(playerName)
@@ -65,21 +66,7 @@ function GetPresetAndTooltip(playerName)
     local presets = {
         { -- Lite
             hidePlayerFrame = true,
-            hideMinimap = false,
-            hideTargetFrame = false,
-            hideTargetTooltip = false,
             showTunnelVision = true,
-            tunnelVisionMaxStrata = false,
-            hideQuestFrame = false,
-            showDazedEffect = false,
-            showCritScreenMoveEffect = false,
-            hideActionBars = false,
-            hideGroupHealth = false,
-            petsDiePermanently = false,
-            --showFullHealthIndicator = false,
-            disableNameplateHealth = false,
-            showIncomingDamageEffect = false,
-            hideBreathIndicator = false,
         },
         { -- Recommended
             hidePlayerFrame = true,
@@ -88,15 +75,9 @@ function GetPresetAndTooltip(playerName)
             hideTargetTooltip = true,
             showTunnelVision = true,
             tunnelVisionMaxStrata = true,
-            hideQuestFrame = true,
             showDazedEffect = true,
             hideGroupHealth = true,
-            showCritScreenMoveEffect = false,
-            hideActionBars = false,
-            petsDiePermanently = false,
-            --showFullHealthIndicator = false,
             disableNameplateHealth = true,
-            showIncomingDamageEffect = false,
             hideBreathIndicator = true,
         },
         { -- Ultra
@@ -106,27 +87,20 @@ function GetPresetAndTooltip(playerName)
             hideTargetTooltip = true,
             showTunnelVision = true,
             tunnelVisionMaxStrata = true,
-            --showFullHealthIndicator = true,
             disableNameplateHealth = true,
             showIncomingDamageEffect = true,
-            hideQuestFrame = true,
             showDazedEffect = true,
             showCritScreenMoveEffect = true,
             hideActionBars = true,
             hideGroupHealth = true,
             petsDiePermanently = true,
             hideBreathIndicator = true,
+            showHealingIndicator = true,
         }
     }
 
-    local tooltipText = {}
-    table.insert(tooltipText, "|cffffd100Settings Enabled|r")
-    table.insert(tooltipText, " ")
-
-    local preset = "Custom"
+    -- Build the player's known settings table (true means explicitly enabled)
     local settings = nil
-
-    -- Determine settings source
     if playerName == UnitName("player") and UltraHardcoreDB and UltraHardcoreDB.GLOBAL_SETTINGS then
         settings = UltraHardcoreDB.GLOBAL_SETTINGS
     elseif seen[playerName] and seen[playerName].customSettings then
@@ -143,16 +117,40 @@ function GetPresetAndTooltip(playerName)
     end
 
     -- Determine preset for leaderboard column
+    local function setTrueKeys(t)
+        local s = {}
+        if t then
+            for k, v in pairs(t) do if v == true then s[k] = true end end
+        end
+        return s
+    end
+
+    local KEYS = {}
+    for _, ptbl in ipairs(presets) do
+        for k, v in pairs(ptbl) do if v == true then KEYS[k] = true end end
+    end
+
+    local playerSet = {}
     if settings then
-        for i, presetSettings in ipairs(presets) do
-            local isMatch = true
-            for key, value in pairs(presetSettings) do
-                if (settings[key] or false) ~= value then
-                    isMatch = false
-                    break
-                end
-            end
-            if isMatch then
+        for k in pairs(KEYS) do
+            if settings[k] == true then playerSet[k] = true end
+        end
+    end
+
+    local function setsEqual(a, b)
+        local ca, cb = 0, 0
+        for _ in pairs(a) do ca = ca + 1 end
+        for _ in pairs(b) do cb = cb + 1 end
+        if ca ~= cb then return false end
+        for k in pairs(a) do if not b[k] then return false end end
+        return true
+    end
+
+    local preset = "Custom"
+    if settings then
+        for i = #presets, 1, -1 do
+            local presetSet = setTrueKeys(presets[i])
+            if setsEqual(playerSet, presetSet) then
                 preset = presetNames[i]
                 break
             end
@@ -161,23 +159,67 @@ function GetPresetAndTooltip(playerName)
         preset = seen[playerName] and seen[playerName].preset or "Custom"
     end
 
-    -- Generate tooltip based on settings
-    if settings then
-        local hasSettings = false
-        for _, option in ipairs(settingsCheckboxOptions) do
-            if settings[option.dbSettingsValueName] then
-                table.insert(tooltipText, option.name)
-                hasSettings = true
-            end
-        end
-        if not hasSettings then
-            table.insert(tooltipText, "No settings enabled")
-        end
-    else
-        table.insert(tooltipText, "Error: Settings data unavailable")
+    local tooltipText = {}
+    table.insert(tooltipText, "|cffffd100Settings Enabled|r")
+    table.insert(tooltipText, " ")
+
+    local RED   = "|cfff44336"
+    local WHITE = "|cffffffff"
+    local GRAY  = "|cff414141"
+    local END   = "|r"
+
+    local nameByKey = {}
+    for _, opt in ipairs(settingsCheckboxOptions) do
+        nameByKey[opt.dbSettingsValueName] = opt.name
     end
 
-    return preset, table.concat(tooltipText, "\n")
+    -- Helper: take only the 'true' keys from a preset table
+    local function enabledSet(t)
+        local s = {}
+        if t then
+            for k, v in pairs(t) do
+            if v == true then s[k] = true end
+            end
+        end
+        return s
+    end
+
+    local L = enabledSet(presets[1])
+    local R = enabledSet(presets[2])
+    local E = enabledSet(presets[3])
+
+    local L_only = L
+    local R_only = {}
+    for k in pairs(R) do if not L[k] then R_only[k] = true end end
+    local E_only = {}
+    for k in pairs(E) do if not R[k] then E_only[k] = true end end
+
+    local sections = {
+        { title = "Lite",          keys = L_only },
+        { title = "Recommended",   keys = R_only },
+        { title = "Experimental",  keys = E_only },
+    }
+
+    for i, sec in ipairs(sections) do
+        table.insert(tooltipText, RED .. sec.title .. END)
+
+        local hadAny = false
+        for _, opt in ipairs(settingsCheckboxOptions) do
+            local key = opt.dbSettingsValueName
+            if sec.keys[key] then
+            hadAny = true
+            local enabled = (settings and settings[key] == true)
+            table.insert(tooltipText, (enabled and WHITE or GRAY) .. (nameByKey[key] or key) .. END)
+            end
+        end
+
+        if not hadAny then
+            table.insert(tooltipText, GRAY .. "(none)" .. END)
+        end
+        if i < #sections then table.insert(tooltipText, " ") end
+    end
+
+return preset, table.concat(tooltipText, "\n")
 end
 
 function UHCLB_GetLocalSettingsIdList()
@@ -185,7 +227,7 @@ function UHCLB_GetLocalSettingsIdList()
   if UltraHardcoreDB and UltraHardcoreDB.GLOBAL_SETTINGS and settingsCheckboxOptions then
     for _, opt in ipairs(settingsCheckboxOptions) do
       if UltraHardcoreDB.GLOBAL_SETTINGS[opt.dbSettingsValueName] then
-        table.insert(ids, opt.id) -- matches how GetPresetAndTooltip reconstructs settings
+        table.insert(ids, opt.id)
       end
     end
   end
