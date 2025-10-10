@@ -250,19 +250,22 @@ ev:SetScript("OnEvent", function(_, e, key, state)
                 net:SendSnapReq()
             end)
         end
-
     elseif e == "PLAYER_LOGOUT" then
         local net = addon:GetModule("Network", true)
         if net and net.SendOfflineDelta then
             net:SendOfflineDelta()
         end
-
 	elseif e == "MODIFIER_STATE_CHANGED" then
 	  local net = addon:GetModule("Network", true)
 	  if key == "LALT" and FRAME and FRAME:IsShown() and net and net:IsDebug() then
 	    FRAME.RefreshLeaderboardUI()
 	  end
-
+    elseif e == "PLAYER_DEAD" then
+        local net = addon:GetModule("Network", true)
+        if net and net.MarkDeadAndSend then
+            net:MarkDeadAndSend()
+        end
+        return
     else
         -- Coalesce other events into a short delay
         C_Timer.After(2, SendAnnounce)
@@ -311,15 +314,7 @@ local sortState = {
 }
 
 local function isDead(e)
-    local v = e and e.lowestHealth
-    if v == nil then
-        return false
-    end
-    if type(v) == "string" then
-        v = v:gsub("%%", "")
-    end
-    v = tonumber(v) or 0
-    return v <= 0
+    return e and e.dead == true
 end
 
 local function valueForSort(e, key)
@@ -477,6 +472,7 @@ end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
+    f:SetFrameStrata("HIGH")
     f:SetSize(820, 420)
     f:SetPoint("CENTER")
     f:Hide()
@@ -722,11 +718,10 @@ local function CreateMainFrame()
             local isOffline = not row.online
 
             local r,g,b = isOffline and 0.65 or 1, isOffline and 0.65 or 1, isOffline and 0.65 or 1
-
-			if isDead(e) then
+            if isDead(e) then
                 r, g, b = 0.95, 0.26, 0.21
             end
-			
+
             for _, fs in ipairs(row.cols) do
             fs:SetTextColor(r, g, b)
             end
@@ -777,8 +772,4 @@ SlashCmdList.UHLB = function(msg)
   end
 
 end
-
-
-
-
 
