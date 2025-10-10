@@ -66,6 +66,7 @@ function Data:BuildRowsForUI(seen)
                 lastSeenSec          = lastSeenSec,
                 lastSeenText         = FormatAgo(lastSeenSec),
                 online               = IsOnline(entry.name, seen),
+                dead                 = rec.dead or false,
             }
             have[entry.name] = true
         end
@@ -92,6 +93,7 @@ function Data:BuildRowsForUI(seen)
                     lastSeenSec          = lastSeenSec,
                     lastSeenText         = FormatAgo(lastSeenSec),
                     online               = online,
+                    dead                 = (s.dead == true),
                 }
             end
         end
