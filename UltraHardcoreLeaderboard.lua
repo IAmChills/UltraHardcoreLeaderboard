@@ -117,46 +117,55 @@ function GetPresetAndTooltip(playerName)
     end
 
     -- Determine preset for leaderboard column
-    local function setTrueKeys(t)
+    local function trueKeys(t)
         local s = {}
-        if t then
-            for k, v in pairs(t) do if v == true then s[k] = true end end
-        end
+        if t then for k, v in pairs(t) do if v == true then s[k] = true end end end
         return s
     end
-
-    local KEYS = {}
-    for _, ptbl in ipairs(presets) do
-        for k, v in pairs(ptbl) do if v == true then KEYS[k] = true end end
-    end
-
-    local playerSet = {}
-    if settings then
-        for k in pairs(KEYS) do
-            if settings[k] == true then playerSet[k] = true end
-        end
-    end
-
-    local function setsEqual(a, b)
-        local ca, cb = 0, 0
-        for _ in pairs(a) do ca = ca + 1 end
-        for _ in pairs(b) do cb = cb + 1 end
-        if ca ~= cb then return false end
-        for k in pairs(a) do if not b[k] then return false end end
+    local function hasAll(have, need)
+        for k in pairs(need) do if not have[k] then return false end end
         return true
     end
+    local function hasAny(have, subset)
+        for k in pairs(subset) do if have[k] then return true end end
+        return false
+    end
 
-    local preset = "Custom"
+    -- Tier sets (cumulative)
+    local L = trueKeys(presets[1])            -- Lite
+    local R = trueKeys(presets[2])            -- Recommended (includes Lite)
+    local E = trueKeys(presets[3])            -- Experimental (includes Recommended)
+
+    -- Exclusive deltas (new options introduced at each tier)
+    local R_only = {}; for k in pairs(R) do if not L[k] then R_only[k] = true end end
+    local E_only = {}; for k in pairs(E) do if not R[k] then E_only[k] = true end end
+
+    -- Player's enabled set (restricted to known tier keys)
+    local player = {}
     if settings then
-        for i = #presets, 1, -1 do
-            local presetSet = setTrueKeys(presets[i])
-            if setsEqual(playerSet, presetSet) then
-                preset = presetNames[i]
-                break
-            end
-        end
-    else
+        for k in pairs(L) do if settings[k] == true then player[k] = true end end
+        for k in pairs(R_only) do if settings[k] == true then player[k] = true end end
+        for k in pairs(E_only) do if settings[k] == true then player[k] = true end end
+    end
+
+    local preset
+    if not settings then
+        -- fallback to what you already store remotely when no local settings
         preset = seen[playerName] and seen[playerName].preset or "Custom"
+    else
+        if hasAll(player, E) then
+            -- full Experimental (top tier; nothing above it to be partial)
+            preset = "Experimental"
+        elseif hasAll(player, R) then
+            -- full Recommended; add "+" if any Experimental-only entries are toggled
+            preset = hasAny(player, E_only) and "Recommended +" or "Recommended"
+        elseif hasAll(player, L) then
+            -- full Lite; add "+" if any options from higher tiers are toggled
+            preset = (hasAny(player, R_only) or hasAny(player, E_only)) and "Lite +" or "Lite"
+        else
+            -- didn't fully satisfy Lite
+            preset = "Custom"
+        end
     end
 
     local tooltipText = {}
@@ -341,13 +350,13 @@ local COLS = {
     { key = "name",    title = "Player Name", width = 100, align = "CENTER" },
     { key = "level",   title = "Lvl",        width = 40,  align = "CENTER" },
     { key = "class",   title = "Class",      width = 50,  align = "CENTER" },
-    { key = "preset",  title = "Preset",     width = 80,  align = "CENTER" },
+    { key = "preset",  title = "Preset",     width = 100,  align = "CENTER" },
     { key = "seen",    title = "Seen",       width = 50,  align = "CENTER" },
     { key = "version", title = "Version",    width = 60,  align = "CENTER" },
     { key = "lowestHealth", title = "Lowest HP", width = 80, align = "CENTER" },
     { key = "elitesSlain", title = "Elites", width = 50, align = "CENTER" },
     { key = "enemiesSlain", title = "Enemies", width = 70, align = "CENTER" },
-    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 100, align = "CENTER" },
+    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 90, align = "CENTER" },
 }
 
 local sortState = {
@@ -515,7 +524,7 @@ end
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetFrameStrata("HIGH")
-    f:SetSize(820, 420)
+    f:SetSize(830, 420)
     f:SetPoint("CENTER")
     f:Hide()
 
@@ -812,6 +821,5 @@ SlashCmdList.UHLB = function(msg)
     end
     return
   end
-
 end
 
