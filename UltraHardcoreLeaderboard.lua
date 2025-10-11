@@ -356,7 +356,7 @@ local COLS = {
     { key = "lowestHealth", title = "Lowest HP", width = 80, align = "CENTER" },
     { key = "elitesSlain", title = "Elites", width = 50, align = "CENTER" },
     { key = "enemiesSlain", title = "Enemies", width = 70, align = "CENTER" },
-    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 90, align = "CENTER" },
+    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 100, align = "CENTER" },
 }
 
 local sortState = {
@@ -448,7 +448,7 @@ local function UpdateHeaderArrows()
     for i, col in ipairs(COLS) do
         local txt = col.title
         if sortState.key == col.key then
-            txt = txt .. (sortState.asc and " ▲" or " ▼")
+            txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
         end
         HEADER[i]:SetText(txt)
     end
@@ -524,7 +524,7 @@ end
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetFrameStrata("HIGH")
-    f:SetSize(830, 420)
+    f:SetSize(840, 420)
     f:SetPoint("CENTER")
     f:Hide()
 
@@ -671,6 +671,7 @@ local function CreateMainFrame()
                 tooltipText = tooltipText,
                 online = r.online,
                 lastSeenSec = r.lastSeenSec,
+				dead = r.dead,
             })
         end
 
@@ -821,5 +822,6 @@ SlashCmdList.UHLB = function(msg)
     end
     return
   end
+
 end
 
