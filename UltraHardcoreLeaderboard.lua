@@ -59,6 +59,7 @@ local settingsCheckboxOptions = {
     { id = 16, name = "Show Incoming Damage Effect", dbSettingsValueName = "showIncomingDamageEffect" },
     { id = 17, name = "Breath Indicator", dbSettingsValueName = "hideBreathIndicator" },
     { id = 18, name = "Show Incoming Healing Effect", dbSettingsValueName = "showHealingIndicator" },
+    { id = 19, name = "First Person Camera", dbSettingsValueName = "setFirstPersonCamera"}
 }
 
 function GetPresetAndTooltip(playerName)
@@ -96,6 +97,7 @@ function GetPresetAndTooltip(playerName)
             petsDiePermanently = true,
             hideBreathIndicator = true,
             showHealingIndicator = true,
+            setFirstPersonCamera = true,
         }
     }
 
