@@ -118,6 +118,50 @@ function GetPresetAndTooltip(playerName)
         end
     end
 
+    local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
+    cache = cache and cache[playerName]
+
+    if not settings and cache then
+        -- 1) Prefer exact customSettings from cache if present
+        if type(cache.customSettings) == "table" and next(cache.customSettings) ~= nil then
+            settings = {}
+            for _, settingId in ipairs(cache.customSettings) do
+                local id = tonumber(settingId)
+                for _, option in ipairs(settingsCheckboxOptions) do
+                    if option.id == id then
+                        settings[option.dbSettingsValueName] = true
+                        break
+                    end
+                end
+            end
+        end
+
+        -- 2) If still nothing, normalize the preset string and map to your preset tiers
+        if (not settings) or (next(settings) == nil) then
+            local p = cache.preset
+            if type(p) == "string" then
+                -- normalize: lowercase, strip spaces and punctuation (handles "Lite +", "Lite+", "lite-plus", etc.)
+                local norm = p:lower():gsub("%s+", ""):gsub("%p", "")
+                local idx
+                if norm:find("^lite") then
+                    idx = 1
+                elseif norm:find("^recommended") or norm == "rec" then
+                    idx = 2
+                elseif norm:find("^experimental") or norm == "exp" then
+                    idx = 3
+                end
+                if idx then
+                    settings = presets[idx]  -- use the default toggles for that tier
+                end
+            end
+        end
+
+        -- 3) Ensure the outward-facing preset name reflects cache if we fell back
+        if settings and (not preset or preset == "Custom") and type(cache.preset) == "string" then
+            preset = cache.preset   -- e.g., "Lite +"
+        end
+    end
+
     -- Determine preset for leaderboard column
     local function trueKeys(t)
         local s = {}
@@ -621,13 +665,17 @@ local function CreateMainFrame()
         end)
         row:SetScript("OnEnter", function(self)
             if self.online then
-                self.highlight:Show()
-                if self.name and self.tooltipText then
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 36, self:GetHeight() * -1)
-                    GameTooltip:SetText(self.name, 1, 1, 1)
-                    GameTooltip:AddLine(self.tooltipText, 1, 1, 1, true)
-                    GameTooltip:Show()
-                end
+                self.highlight:SetColorTexture(0.95, 0.26, 0.21, 0.25)
+            else
+                self.highlight:SetColorTexture(0.60, 0.60, 0.60, 0.25)
+            end
+            self.highlight:Show()
+
+            if self.name and self.tooltipText then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 36, self:GetHeight() * -1)
+                GameTooltip:SetText(self.name, 1, 1, 1)
+                GameTooltip:AddLine(self.tooltipText, 1, 1, 1, true)
+                GameTooltip:Show()
             end
         end)
         row:SetScript("OnLeave", function(self)
@@ -649,12 +697,13 @@ local function CreateMainFrame()
         local data = addon:GetModule("Data", true)
         local rows = data and data:BuildRowsForUI(seen) or {}
         local entries = {}
+        local net = addon:GetModule("Network", true)
         for _, r in ipairs(rows) do
             local preset, tooltipText = GetPresetAndTooltip(r.name)
-            local net = addon:GetModule("Network", true)
-            local sv = seen[r.name]
+
             local shownVersion
             if IsLeftAltKeyDown() and net and net:IsDebug() then
+                local sv = seen[r.name]
                 shownVersion = (sv and sv.LVersion) or r.version
             else
                 shownVersion = r.version
@@ -723,10 +772,15 @@ local function CreateMainFrame()
                     end
                 end)
                 row:SetScript("OnEnter", function(self)
-                    if not self.online then return end
+                    if self.online then
+                        self.highlight:SetColorTexture(0.95, 0.26, 0.21, 0.25)
+                    else
+                        self.highlight:SetColorTexture(0.60, 0.60, 0.60, 0.25)
+                    end
                     self.highlight:Show()
+
                     if self.name and self.tooltipText then
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 36, self:GetHeight() * -1)
                         GameTooltip:SetText(self.name, 1, 1, 1)
                         GameTooltip:AddLine(self.tooltipText, 1, 1, 1, true)
                         GameTooltip:Show()
@@ -824,6 +878,5 @@ SlashCmdList.UHLB = function(msg)
     end
     return
   end
-
 end
 
