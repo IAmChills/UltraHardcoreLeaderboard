@@ -227,6 +227,20 @@ local function BuildEmbedIfNeeded()
 
   DEST = tabContents[3]
   
+  -- Hide any existing text objects in the frame that aren't ours
+  local function hideExistingTextObjects()
+    for i = 1, DEST:GetNumChildren() do
+      local child = select(i, DEST:GetChildren())
+      if child and child.GetText and type(child.GetText) == "function" then
+        -- Hide any text object that exists (assuming they're all from UltraHardcore)
+        child:Hide()
+      end
+    end
+  end
+  
+  -- Hide existing text objects
+  hideExistingTextObjects()
+  
   -- Hide custom achievement tab when embedded UI loads
   --HideCustomAchievementTab()
 
@@ -290,6 +304,9 @@ f:SetScript("OnEvent", function(self, event)
       if BuildEmbedIfNeeded() then
         HookSourceSignals()
         C_Timer.After(0, function() EMBED:Rebuild() end)
+      else
+        -- UltraHardcore not available - achievements will use standalone mode
+        print("|cff00ff00[HardcoreAchievements]|r UltraHardcore addon not detected - achievements available in standalone mode")
       end
     end)
   end

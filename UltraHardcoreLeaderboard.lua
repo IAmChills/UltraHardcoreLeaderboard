@@ -62,7 +62,7 @@ local settingsCheckboxOptions = {
     { id = 19, name = "First Person Camera", dbSettingsValueName = "setFirstPersonCamera"}
 }
 
-function GetPresetAndTooltip(playerName)
+function GetPresetAndTooltip(playerName) -- Made global for achievements addon
     local presetNames = { "Lite", "Recommended", "Ultra", "Experimental" }
     local presets = {
         { -- Lite

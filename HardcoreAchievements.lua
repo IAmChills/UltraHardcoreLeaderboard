@@ -2,6 +2,16 @@ local ADDON_NAME = ...
 local playerGUID
 local SELF_FOUND_BONUS = 5
 
+-- Check if UltraHardcoreLeaderboard addon is available for preset detection
+local function IsLeaderboardAddonAvailable()
+    return type(GetPresetAndTooltip) == "function"
+end
+
+-- Check if UltraHardcore addon is available for integration
+local function IsUltraHardcoreAddonAvailable()
+    return UltraHardcoreDB ~= nil
+end
+
 local function EnsureDB()
     HardcoreAchievementsDB = HardcoreAchievementsDB or {}
     HardcoreAchievementsDB.chars = HardcoreAchievementsDB.chars or {}
@@ -19,7 +29,8 @@ local function GetCharDB()
 end
 
 function HCA_GetPlayerPreset()
-  if type(GetPresetAndTooltip) == "function" then  -- from UltraHardcoreLeaderboard
+  -- Try to get preset from UltraHardcoreLeaderboard addon first
+  if IsLeaderboardAddonAvailable() then
     local preset = GetPresetAndTooltip(UnitName("player"))
     if type(preset) == "string" and preset ~= "" then
       return preset
@@ -329,7 +340,7 @@ function UHC_AchToast_Show(iconTex, title, pts)
     f:Show()
 
     print("|cff00ff00Congratulations!|r You completed the achievement: " .. title)
-    PlaySoundFile("Interface\\AddOns\\UltraHardcoreLeaderboard\\Sounds\\AchievementSound1.ogg", "Effects")
+    PlaySoundFile("Interface\\AddOns\\HardcoreAchievements\\Sounds\\AchievementSound1.ogg", "Effects")
 
     holdSeconds = holdSeconds or 3
     fadeSeconds = fadeSeconds or 0.6
@@ -343,6 +354,7 @@ end
 -- =========================================================
 
 local function IsSelfFound()
+    -- Check for UltraHardcore Self-Found buff
     for i = 1, 40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         if not name then break end
@@ -500,7 +512,28 @@ AchievementPanel.TotalPoints:SetTextColor(0.6, 0.9, 0.6)
 -- Preset multiplier label, e.g. "Point Multiplier (Lite +)"
 AchievementPanel.PresetLabel = AchievementPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 AchievementPanel.PresetLabel:SetPoint("TOP", 5, -60)
-AchievementPanel.PresetLabel:SetText("Point Multiplier (" .. HCA_GetPlayerPreset() .. (IsSelfFound() and ", Self Found)" or ")"))
+
+-- Build the label text based on available information
+local function BuildPresetLabelText()
+    local preset = HCA_GetPlayerPreset()
+    local isSelfFound = IsSelfFound()
+    
+    if preset or isSelfFound then
+        local labelText = "Point Multiplier ("
+        if preset ~= "Custom" then
+            labelText = labelText .. preset
+        else
+            labelText = labelText .. "Standard"
+        end
+        if isSelfFound then
+            labelText = labelText .. ", Self Found"
+        end
+        labelText = labelText .. ")"
+    end
+    return labelText
+end
+
+AchievementPanel.PresetLabel:SetText(BuildPresetLabelText())
 AchievementPanel.PresetLabel:SetTextColor(0.8, 0.8, 0.8)
 
 -- Scrollable container inside the AchievementPanel

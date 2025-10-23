@@ -1,0 +1,16 @@
+## Interface: 11508
+## Title: HardcoreAchievements
+## Author: Chills
+## Version: 1.0.0
+## Notes: Hardcore achievements system for UltraHardcore players
+## Dependencies: UltraHardcore
+## SavedVariables: HardcoreAchievementsDB
+## IconTexture: Interface\AddOns\HardcoreAchievements\Images\HardcoreAchievementsIcon
+
+embeds.xml
+
+HardcoreAchievements.lua
+Achievements\Common.lua
+Achievements\Catalog.lua
+Achievements\FourCandles.lua
+Utils\Embed_UltraHardcore.lua
