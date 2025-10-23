@@ -662,6 +662,7 @@ function CreateAchievementRow(parent, achId, title, desc, tooltip, icon, level, 
     row.points = tonumber(points) or 0
     row.completed = false
     row.maxLevel = tonumber(level) or 0
+    row.tooltip = tooltip  -- Store the tooltip for later access
     ApplyOutleveledStyle(row)
     if row.Icon and IsRowOutleveled(row) and row.Icon.SetDesaturated then
         row.Icon:SetDesaturated(true)

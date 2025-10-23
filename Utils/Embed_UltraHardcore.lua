@@ -1,14 +1,15 @@
 -- Embed_UltraHardcore.lua
--- Embeds HardcoreAchievements rows into the UltraHardcore Settings "Achievements" tab (tabContents[3])
--- Minimal UI: no backdrops/borders; shows icon, title, points, optional level, tooltip.
+-- Embeds HardcoreAchievements as circular icons in a grid layout into the UltraHardcore Settings "Achievements" tab (tabContents[3])
+-- Grid UI: circular icons with tooltips showing title, level requirement, and points.
 
 local ADDON_NAME = ...
 local EMBED = {}
 local DEST      -- tabContents[3]
-local ROW_H     = 28
-local PADDING_X = 6
-local GAP_Y     = 4
+local ICON_SIZE = 60
+local ICON_PADDING = 12
+local GRID_COLS = 7  -- Number of columns in the grid
 
+-- ---------- Source ----------
 local function GetSourceRows()
   if AchievementPanel and type(AchievementPanel.achievements) == "table" then
     return AchievementPanel.achievements
@@ -16,199 +17,247 @@ local function GetSourceRows()
 end
 
 local function ReadRowData(src)
-  if not src then return nil end
+  if not src then return end
   local title = ""
   if src.Title and src.Title.GetText then
     title = src.Title:GetText() or ""
   elseif type(src.id) == "string" then
     title = src.id
   end
-
   local iconTex
   if src.Icon and src.Icon.GetTexture then
     iconTex = src.Icon:GetTexture()
   end
-
-  local data = {
+  
+  -- Get the tooltip from the row object (now stored in CreateAchievementRow)
+  local tooltip = src.tooltip or title
+  
+  return {
     id        = src.id or title,
     title     = title,
     iconTex   = iconTex,
-    tooltip   = src.tooltip or src.desc or title,
+    tooltip   = tooltip,
     points    = tonumber(src.points) or 0,
     maxLevel  = tonumber(src.maxLevel) or nil,
     completed = not not src.completed,
   }
-  return data
 end
 
-local function CreateEmbedRow(parent)
-  local row = CreateFrame("Button", nil, parent)
-  row:SetSize(1, ROW_H) -- width set by layout
-  row:RegisterForClicks("AnyUp")
+-- ---------- Icon Factory ----------
+local function CreateEmbedIcon(parent)
+  local icon = CreateFrame("Button", nil, parent)
+  icon:SetSize(ICON_SIZE, ICON_SIZE)
+  icon:RegisterForClicks("AnyUp")
 
-  row.Icon = row:CreateTexture(nil, "ARTWORK")
-  row.Icon:SetSize(22, 22)
-  row.Icon:SetPoint("LEFT", parent, "LEFT", PADDING_X, 0)
-  row.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  -- Create the achievement icon
+  icon.Icon = icon:CreateTexture(nil, "ARTWORK")
+  icon.Icon:SetSize(ICON_SIZE - 2, ICON_SIZE - 2)
+  icon.Icon:SetPoint("CENTER", icon, "CENTER", 0, 0)
+  icon.Icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
 
-  row.Title = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  row.Title:SetPoint("LEFT", row.Icon, "RIGHT", 6, 0)
-  row.Title:SetJustifyH("LEFT")
+  -- Create circular mask for the icon
+  icon.Mask = icon:CreateMaskTexture()
+  icon.Mask:SetAllPoints(icon.Icon)
+  icon.Mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+  icon.Icon:AddMaskTexture(icon.Mask)
 
-  row.Level = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-  row.Level:SetPoint("LEFT", row.Title, "RIGHT", 8, 0)
-  row.Level:SetJustifyH("LEFT")
+  -- Create completion border
+  icon.CompletionBorder = icon:CreateTexture(nil, "OVERLAY")
+  icon.CompletionBorder:SetAllPoints(icon)
+  icon.CompletionBorder:SetTexture("Interface\\CharacterFrame\\UI-Character-InfoFrame-Character")
+  icon.CompletionBorder:SetTexCoord(0.5, 0.75, 0.5, 0.75)
+  icon.CompletionBorder:SetVertexColor(0, 1, 0, 1.0) -- Green border
+  icon.CompletionBorder:Hide()
 
-  row.Points = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  row.Points:SetJustifyH("RIGHT")
-  row.Points:SetPoint("RIGHT", parent, "RIGHT", -PADDING_X, 0)
-
-  row:SetScript("OnEnter", function(self)
-    if not self.tooltip or self.tooltip == "" then return end
+  icon:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText(self.title or "", 1, 0.82, 0)
-    GameTooltip:AddLine(self.tooltip, 0.9, 0.9, 0.9, true)
-    if self.maxLevel then
-      GameTooltip:AddLine(("Required max level: %d"):format(self.maxLevel), 0.7, 0.7, 0.7)
+    
+    if self.maxLevel and self.maxLevel > 0 then
+      GameTooltip:AddLine(("Max Level: %d"):format(self.maxLevel), 0.7, 0.7, 0.7)
     end
-    if type(self.points) == "number" then
-      GameTooltip:AddLine(("Points: %d"):format(self.points), 0.7, 0.9, 0.7)
+
+    if self.tooltip and self.tooltip ~= "" then
+      GameTooltip:AddLine(self.tooltip, 0.9, 0.9, 0.9, true)
     end
+    
+    if type(self.points) == "number" and self.points > 0 then
+      GameTooltip:AddLine("\n" .. ("Points: %d"):format(self.points), 0.7, 0.9, 0.7)
+    end
+    
     if self.completed then
       GameTooltip:AddLine("Completed", 0.6, 0.9, 0.6)
     end
+    
     GameTooltip:Show()
   end)
-  row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-  return row
+  return icon
 end
 
-local function LayoutRows(container, rows)
-  if not container or not rows then return end -- guard to avoid nil container
-  local y = -PADDING_X
-
-  for _, r in ipairs(rows) do
-    r:ClearAllPoints()
-    r:SetPoint("TOPLEFT", container, "TOPLEFT", 0, y)
-    r:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, y)
-    r.Points:ClearAllPoints()
-    r.Points:SetPoint("RIGHT", container, "RIGHT", -PADDING_X, 0)
-    y = y - (ROW_H + GAP_Y)
-    r:Show()
+-- ---------- Layout ----------
+local function LayoutIcons(container, icons)
+  if not container or not icons then return end
+  
+  local totalIcons = #icons
+  local rows = math.ceil(totalIcons / GRID_COLS)
+  local startX = ICON_PADDING
+  local startY = -ICON_PADDING
+  
+  for i, icon in ipairs(icons) do
+    local col = ((i - 1) % GRID_COLS)
+    local row = math.floor((i - 1) / GRID_COLS)
+    
+    local x = startX + col * (ICON_SIZE + ICON_PADDING)
+    local y = startY - row * (ICON_SIZE + ICON_PADDING)
+    
+    icon:ClearAllPoints()
+    icon:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+    icon:Show()
   end
 
-  local neededH = (ROW_H + GAP_Y) * #rows + PADDING_X
+  local neededH = rows * (ICON_SIZE + ICON_PADDING) + ICON_PADDING
   container:SetHeight(math.max(neededH, 1))
 end
 
+-- Keep content width synced to the scroll frame so text aligns and doesn't bunch up
+local function SyncContentWidth()
+  if not DEST or not DEST.Scroll or not DEST.Content then return end
+  local w = math.max(DEST.Scroll:GetWidth(), 1)
+  DEST.Content:SetWidth(w)
+end
+
+-- ---------- Rebuild ----------
 function EMBED:Rebuild()
-  -- Hard guard: don't layout until destination content exists
   if not DEST or not DEST.Content then return end
   if not self.Content then self.Content = DEST.Content end
 
+  SyncContentWidth()
+
   local srcRows = GetSourceRows()
   if not srcRows then
-    if self.rows then for _, r in ipairs(self.rows) do r:Hide() end end
+    if self.icons then for _, icon in ipairs(self.icons) do icon:Hide() end end
     return
   end
 
-  self.rows = self.rows or {}
+  self.icons = self.icons or {}
   local needed = 0
 
   for _, srow in ipairs(srcRows) do
     if not srow._isHidden then
       needed = needed + 1
       local data = ReadRowData(srow)
-
-      local row = self.rows[needed]
-      if not row then
-        row = CreateEmbedRow(self.Content)
-        self.rows[needed] = row
+      local icon = self.icons[needed]
+      if not icon then
+        icon = CreateEmbedIcon(self.Content)
+        self.icons[needed] = icon
       end
 
-      row.id        = data.id
-      row.title     = data.title
-      row.tooltip   = data.tooltip
-      row.points    = data.points
-      row.maxLevel  = data.maxLevel
-      row.completed = data.completed
+      icon.id        = data.id
+      icon.title     = data.title
+      icon.tooltip   = data.tooltip
+      icon.points    = data.points
+      icon.maxLevel  = data.maxLevel
+      icon.completed = data.completed
 
       if data.iconTex then
-        row.Icon:SetTexture(data.iconTex)
+        icon.Icon:SetTexture(data.iconTex)
       else
-        row.Icon:SetTexture(136116) -- generic achievement icon
+        icon.Icon:SetTexture(136116) -- generic achievement icon
       end
 
-      row.Title:SetText(data.title or "")
-
-      if data.maxLevel and data.maxLevel > 0 then
-        -- Keep highlight color; optionally dim if your source flagged outleveled via red
-        if srow.Title and srow.Title.GetTextColor then
-          local r, g = srow.Title:GetTextColor()
-          if r and r > 0.8 and g and g < 0.3 then
-            row.Title:SetTextColor(0.9, 0.2, 0.2)
-          else
-            row.Title:SetTextColor(1, 0.82, 0)
-          end
+      -- Set icon appearance based on status
+      if data.completed then
+        -- Completed: Full color
+        icon.Icon:SetDesaturated(false)
+        icon.Icon:SetAlpha(1.0)
+        icon.Icon:SetVertexColor(1.0, 1.0, 1.0) -- Full color
+      elseif data.maxLevel and data.maxLevel > 0 then
+        -- Check if player is out-leveled
+        local playerLevel = UnitLevel("player") or 0
+        if playerLevel > data.maxLevel then
+          -- Out-leveled: Desaturated
+          icon.Icon:SetDesaturated(true)
+          icon.Icon:SetAlpha(0.7)
+          icon.Icon:SetVertexColor(1.0, 1.0, 1.0) -- Reset to normal color
         else
-          row.Title:SetTextColor(1, 0.82, 0)
+          -- Available but has level requirement: Full color
+          icon.Icon:SetDesaturated(false)
+          icon.Icon:SetAlpha(1.0)
+          icon.Icon:SetVertexColor(1.0, 1.0, 1.0) -- Full color
         end
-        row.Level:SetText(("≤%d"):format(data.maxLevel))
-        row.Level:Show()
       else
-        row.Title:SetTextColor(1, 0.82, 0)
-        row.Level:SetText("")
-        row.Level:Hide()
+        -- Available/Incomplete: Full color
+        icon.Icon:SetDesaturated(false)
+        icon.Icon:SetAlpha(1.0)
+        icon.Icon:SetVertexColor(1.0, 1.0, 1.0) -- Full color
       end
 
-      if data.points and data.points > 0 then
-        row.Points:SetText(("%d pts"):format(data.points))
-        if data.completed then
-          row.Points:SetTextColor(0.6, 0.9, 0.6)
-        else
-          row.Points:SetTextColor(0.9, 0.9, 0.9)
-        end
+      -- Set completion border
+      if data.completed then
+        icon.CompletionBorder:Show()
       else
-        row.Points:SetText("")
+        icon.CompletionBorder:Hide()
       end
     end
   end
 
-  for i = needed + 1, #self.rows do
-    self.rows[i]:Hide()
+  for i = needed + 1, #self.icons do
+    self.icons[i]:Hide()
   end
 
-  LayoutRows(self.Content, self.rows)
+  LayoutIcons(self.Content, self.icons)
 end
 
+-- Hide the custom Achievement tab when embedded UI loads
+local function HideCustomAchievementTab()
+    -- Hide the custom Achievement tab created in HardcoreAchievements.lua
+    local tab = _G["CharacterFrameTab" .. (CharacterFrame.numTabs + 1)]
+    if tab and tab:GetText() and tab:GetText():find("Achievements") then
+        tab:Hide()
+        tab:SetScript("OnClick", function() end) -- Disable click functionality
+    end
+end
+
+-- ---------- Build / Hooks ----------
 local function BuildEmbedIfNeeded()
   if DEST and DEST.Scroll and DEST.Content and EMBED.Content then return true end
   if not tabContents or not tabContents[3] then return false end
 
   DEST = tabContents[3]
+  
+  -- Hide custom achievement tab when embedded UI loads
+  --HideCustomAchievementTab()
 
   DEST.Scroll = CreateFrame("ScrollFrame", nil, DEST, "UIPanelScrollFrameTemplate")
-  DEST.Scroll:SetPoint("TOPLEFT", DEST, "TOPLEFT", 8, -8)
-  DEST.Scroll:SetPoint("BOTTOMRIGHT", DEST, "BOTTOMRIGHT", -28, 12)
+  DEST.Scroll:SetPoint("TOPLEFT", DEST, "TOPLEFT", 4, -40)
+  DEST.Scroll:SetPoint("BOTTOMRIGHT", DEST, "BOTTOMRIGHT", -8, -20)
+  
+  -- Hide the scroll bar but keep it functional
+  if DEST.Scroll.ScrollBar then
+    DEST.Scroll.ScrollBar:Hide()
+  end
 
   DEST.Content = CreateFrame("Frame", nil, DEST.Scroll)
   DEST.Content:SetSize(1, 1)
   DEST.Scroll:SetScrollChild(DEST.Content)
 
-  -- IMPORTANT: bind the content so Rebuild/LayoutRows get a valid container
   EMBED.Content = DEST.Content
+  SyncContentWidth()
 
   DEST:HookScript("OnShow", function()
-    -- Ensure binding persists if something recreated frames
     if not EMBED.Content or EMBED.Content ~= DEST.Content then
       EMBED.Content = DEST.Content
     end
+    SyncContentWidth()
     EMBED:Rebuild()
   end)
 
   DEST.Scroll:SetScript("OnSizeChanged", function(self)
     self:UpdateScrollChildRect()
+    SyncContentWidth()
+    EMBED:Rebuild()
   end)
 
   return true
@@ -232,13 +281,11 @@ end
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("ADDON_LOADED")
-f:SetScript("OnEvent", function(self, event, arg1)
+f:SetScript("OnEvent", function(self, event)
   if BuildEmbedIfNeeded() then
     HookSourceSignals()
-    -- defer one frame so Settings tab sizing is ready before layout
     C_Timer.After(0, function() EMBED:Rebuild() end)
   else
-    -- Try again shortly if tabContents not ready yet
     C_Timer.After(0.25, function()
       if BuildEmbedIfNeeded() then
         HookSourceSignals()
@@ -247,7 +294,6 @@ f:SetScript("OnEvent", function(self, event, arg1)
     end)
   end
 
-  -- If source rows are not built yet, try another refresh shortly
   if not GetSourceRows() then
     C_Timer.After(1.0, function()
       HookSourceSignals()
