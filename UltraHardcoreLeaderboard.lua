@@ -63,7 +63,7 @@ local settingsCheckboxOptions = {
 }
 
 function GetPresetAndTooltip(playerName)
-    local presetNames = { "Lite", "Recommended", "Experimental" }
+    local presetNames = { "Lite", "Recommended", "Ultra", "Experimental" }
     local presets = {
         { -- Lite
             hidePlayerFrame = true,
@@ -71,31 +71,45 @@ function GetPresetAndTooltip(playerName)
         },
         { -- Recommended
             hidePlayerFrame = true,
-            hideMinimap = true,
-            hideTargetFrame = true,
-            hideTargetTooltip = true,
             showTunnelVision = true,
             tunnelVisionMaxStrata = true,
+            hideTargetFrame = true,
+            hideTargetTooltip = true,
+            disableNameplateHealth = true,
             showDazedEffect = true,
             hideGroupHealth = true,
-            disableNameplateHealth = true,
+            hideMinimap = true,
             hideBreathIndicator = true,
         },
         { -- Ultra
             hidePlayerFrame = true,
-            hideMinimap = true,
-            hideTargetFrame = true,
-            hideTargetTooltip = true,
             showTunnelVision = true,
             tunnelVisionMaxStrata = true,
+            hideTargetFrame = true,
+            hideTargetTooltip = true,
             disableNameplateHealth = true,
-            showIncomingDamageEffect = true,
             showDazedEffect = true,
-            showCritScreenMoveEffect = true,
-            hideActionBars = true,
             hideGroupHealth = true,
-            petsDiePermanently = true,
+            hideMinimap = true,
             hideBreathIndicator = true,
+            petsDiePermanently = true,
+            hideActionBars = true,
+        },
+        { -- Experimental
+            hidePlayerFrame = true,
+            showTunnelVision = true,
+            tunnelVisionMaxStrata = true,
+            hideTargetFrame = true,
+            hideTargetTooltip = true,
+            disableNameplateHealth = true,
+            showDazedEffect = true,
+            hideGroupHealth = true,
+            hideMinimap = true,
+            hideBreathIndicator = true,
+            petsDiePermanently = true,
+            hideActionBars = true,
+            showCritScreenMoveEffect = true,
+            showIncomingDamageEffect = true,
             showHealingIndicator = true,
             setFirstPersonCamera = true,
         }
@@ -103,8 +117,14 @@ function GetPresetAndTooltip(playerName)
 
     -- Build the player's known settings table (true means explicitly enabled)
     local settings = nil
-    if playerName == UnitName("player") and UltraHardcoreDB and UltraHardcoreDB.GLOBAL_SETTINGS then
-        settings = UltraHardcoreDB.GLOBAL_SETTINGS
+    if playerName == UnitName("player") and UltraHardcoreDB then
+        local guid = UnitGUID("player")
+        if guid and UltraHardcoreDB.characterSettings and UltraHardcoreDB.characterSettings[guid] then
+            settings = UltraHardcoreDB.characterSettings[guid]
+        elseif UltraHardcoreDB.GLOBAL_SETTINGS then
+            -- backward compat until everyone has migrated
+            settings = UltraHardcoreDB.GLOBAL_SETTINGS
+        end
     elseif seen[playerName] and seen[playerName].customSettings then
         settings = {}
         for _, settingId in ipairs(seen[playerName].customSettings) do
@@ -147,8 +167,10 @@ function GetPresetAndTooltip(playerName)
                     idx = 1
                 elseif norm:find("^recommended") or norm == "rec" then
                     idx = 2
-                elseif norm:find("^experimental") or norm == "exp" then
+                elseif norm:find("^ultra") or norm == "ult" then
                     idx = 3
+                elseif norm:find("^experimental") or norm == "exp" then
+                    idx = 4
                 end
                 if idx then
                     settings = presets[idx]  -- use the default toggles for that tier
@@ -180,17 +202,20 @@ function GetPresetAndTooltip(playerName)
     -- Tier sets (cumulative)
     local L = trueKeys(presets[1])            -- Lite
     local R = trueKeys(presets[2])            -- Recommended (includes Lite)
-    local E = trueKeys(presets[3])            -- Experimental (includes Recommended)
+    local U = trueKeys(presets[3])            -- Ultra (includes Recommended)
+    local E = trueKeys(presets[4])            -- Experimental (includes Ultra)
 
     -- Exclusive deltas (new options introduced at each tier)
     local R_only = {}; for k in pairs(R) do if not L[k] then R_only[k] = true end end
-    local E_only = {}; for k in pairs(E) do if not R[k] then E_only[k] = true end end
+    local U_only = {}; for k in pairs(U) do if not R[k] then U_only[k] = true end end
+    local E_only = {}; for k in pairs(E) do if not U[k] then E_only[k] = true end end
 
     -- Player's enabled set (restricted to known tier keys)
     local player = {}
     if settings then
         for k in pairs(L) do if settings[k] == true then player[k] = true end end
         for k in pairs(R_only) do if settings[k] == true then player[k] = true end end
+        for k in pairs(U_only) do if settings[k] == true then player[k] = true end end
         for k in pairs(E_only) do if settings[k] == true then player[k] = true end end
     end
 
@@ -202,12 +227,15 @@ function GetPresetAndTooltip(playerName)
         if hasAll(player, E) then
             -- full Experimental (top tier; nothing above it to be partial)
             preset = "Experimental"
+        elseif hasAll(player, U) then
+            -- full Ultra; add "+" if any Experimental-only entries are toggled
+            preset = hasAny(player, E_only) and "Ultra +" or "Ultra"
         elseif hasAll(player, R) then
-            -- full Recommended; add "+" if any Experimental-only entries are toggled
-            preset = hasAny(player, E_only) and "Recommended +" or "Recommended"
+            -- full Recommended; add "+" if any Ultra-only entries are toggled
+            preset = hasAny(player, U_only) and "Recommended +" or "Recommended"
         elseif hasAll(player, L) then
             -- full Lite; add "+" if any options from higher tiers are toggled
-            preset = (hasAny(player, R_only) or hasAny(player, E_only)) and "Lite +" or "Lite"
+            preset = (hasAny(player, R_only) or hasAny(player, U_only) or hasAny(player, E_only)) and "Lite +" or "Lite"
         else
             -- didn't fully satisfy Lite
             preset = "Custom"
@@ -241,17 +269,21 @@ function GetPresetAndTooltip(playerName)
 
     local L = enabledSet(presets[1])
     local R = enabledSet(presets[2])
-    local E = enabledSet(presets[3])
+    local U = enabledSet(presets[3])
+    local E = enabledSet(presets[4])
 
     local L_only = L
     local R_only = {}
     for k in pairs(R) do if not L[k] then R_only[k] = true end end
+    local U_only = {}
+    for k in pairs(U) do if not R[k] then U_only[k] = true end end
     local E_only = {}
-    for k in pairs(E) do if not R[k] then E_only[k] = true end end
+    for k in pairs(E) do if not U[k] then E_only[k] = true end end
 
     local sections = {
         { title = "Lite",          keys = L_only },
         { title = "Recommended",   keys = R_only },
+        { title = "Ultra",         keys = U_only },
         { title = "Experimental",  keys = E_only },
     }
 
@@ -278,15 +310,20 @@ return preset, table.concat(tooltipText, "\n")
 end
 
 function UHCLB_GetLocalSettingsIdList()
-  local ids = {}
-  if UltraHardcoreDB and UltraHardcoreDB.GLOBAL_SETTINGS and settingsCheckboxOptions then
-    for _, opt in ipairs(settingsCheckboxOptions) do
-      if UltraHardcoreDB.GLOBAL_SETTINGS[opt.dbSettingsValueName] then
-        table.insert(ids, opt.id)
-      end
+    local ids = {}
+    if UltraHardcoreDB and settingsCheckboxOptions then
+        local guid = UnitGUID("player")
+        local s = (guid and UltraHardcoreDB.characterSettings and UltraHardcoreDB.characterSettings[guid])
+                or UltraHardcoreDB.GLOBAL_SETTINGS
+        if s then
+        for _, opt in ipairs(settingsCheckboxOptions) do
+            if s[opt.dbSettingsValueName] then
+            table.insert(ids, opt.id)
+            end
+        end
+        end
     end
-  end
-  return ids
+    return ids
 end
 
 local function FormatNumber(num)
