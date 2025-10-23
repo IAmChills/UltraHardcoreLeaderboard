@@ -13,9 +13,3 @@ UltraHardcoreLeaderboard.lua
 Utils\CacheSystem.lua
 Utils\NetworkSystems.lua
 Utils\Data.lua
-Utils\Embed_UltraHardcore.lua
-
-HardcoreAchievements.lua
-Achievements\Common.lua
-Achievements\Catalog.lua
-Achievements\FourCandles.lua
