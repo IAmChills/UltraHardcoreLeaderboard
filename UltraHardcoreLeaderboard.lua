@@ -34,6 +34,7 @@ function addon:OnInitialize()
             minimap = {
                 hide = false,
             },
+            welcomeMessageShown = false,
         },
     })
     addonIcon:Register("UltraHardcoreLeaderboard", addonLDB, self.db.profile.minimap)
@@ -373,6 +374,11 @@ ev:SetScript("OnEvent", function(_, e, key, state)
         local cache = addon:GetModule("Cache", true)
         if cache and cache.Init then cache:Init() end
 
+        -- Show welcome message on first login
+        C_Timer.After(1, function()
+            addon:ShowWelcomeMessage()
+        end)
+
         -- Announce 3 seconds after login and every 60 seconds
         C_Timer.After(3, SendAnnounce)
         StartAnnounceTicker()
@@ -410,6 +416,29 @@ end)
 function addon:OnDisable()
   ev:UnregisterAllEvents()
 end
+
+-- Function to show welcome message popup on first login
+function addon:ShowWelcomeMessage()
+    if not self.db.profile.welcomeMessageShown then
+        -- Create a simple popup dialog
+        StaticPopup_Show("UltraHardcore Leaderboard Message")
+        -- Mark as shown
+        self.db.profile.welcomeMessageShown = true
+    end
+end
+
+-- Define the welcome message popup
+StaticPopupDialogs["UltraHardcore Leaderboard Message"] = {
+    text = "The Ultra Hardcore Leaderboard no longer tracks your achievements. That has been made modular and is a separate addon. You can find it at \n\n https://www.curseforge.com/wow/addons/hardcore-achievements",
+    button1 = "Got it!",
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    OnAccept = function()
+        -- Popup automatically closes
+    end,
+}
 
 C_Timer.NewTicker(60, function()
   local now = (GetServerTime and GetServerTime()) or time()
