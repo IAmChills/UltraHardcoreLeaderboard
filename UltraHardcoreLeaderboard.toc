@@ -4,7 +4,7 @@
 ## Version: 1.2.5
 ## Notes: Guild live leaderboard for UltraHardcore players
 ## Dependencies: UltraHardcore
-## SavedVariables: UltraHardcoreLeaderboardDB
+## SavedVariables: UltraHardcoreLeaderboardDB, HardcoreAchievementsDB
 ## IconTexture: Interface\AddOns\UltraHardcoreLeaderboard\Images\UltraHardcoreLeaderbaordIcon
 
 embeds.xml
