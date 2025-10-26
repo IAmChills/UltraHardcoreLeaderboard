@@ -429,7 +429,7 @@ end
 
 -- Define the welcome message popup
 StaticPopupDialogs["UltraHardcore Leaderboard Message"] = {
-    text = "The Ultra Hardcore Leaderboard no longer tracks your achievements. That has been made modular and is a separate addon. You can find it at \n\n https://www.curseforge.com/wow/addons/hardcore-achievements",
+    text = "The Ultra Hardcore Leaderboard no longer tracks your achievements. That has been made into a plugin for Ultra Hardcore and is a separate addon. You can find it at \n\n https://www.curseforge.com/wow/addons/hardcore-achievements",
     button1 = "Got it!",
     timeout = 0,
     whileDead = true,
