@@ -35,7 +35,7 @@ function addon:OnInitialize()
                 hide = false,
             },
             welcomeMessageShown = false,
-            restrictToGuild = false,  -- New setting for guild restriction toggle
+            restrictToGuild = true,  -- New setting for guild restriction toggle
         },
     })
     addonIcon:Register("UltraHardcoreLeaderboard", addonLDB, self.db.profile.minimap)
@@ -650,7 +650,7 @@ local function CreateMainFrame()
     if addon.db.profile.restrictToGuild then
         f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
     else
-        f.title:SetText("|cfff44336Ultra Hardcore — Global Live Leaderboard|r")
+        f.title:SetText("|cfff44336Ultra Hardcore — Realm Live Leaderboard|r")
     end
 
     local totalWidth = 0
@@ -756,7 +756,7 @@ local function CreateMainFrame()
 
     -- Add guild restriction checkbox
     local guildCheckbox = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-    guildCheckbox:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 10)
+    guildCheckbox:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 8)
     guildCheckbox:SetSize(20, 20)
     guildCheckbox:SetChecked(addon.db.profile.restrictToGuild)
     
@@ -770,7 +770,7 @@ local function CreateMainFrame()
         if addon.db.profile.restrictToGuild then
             f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
         else
-            f.title:SetText("|cfff44336Ultra Hardcore — Global Live Leaderboard|r")
+            f.title:SetText("|cfff44336Ultra Hardcore — Realm Live Leaderboard|r")
         end
         f.RefreshLeaderboardUI()
     end)

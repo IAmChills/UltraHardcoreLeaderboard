@@ -49,8 +49,8 @@ function Data:BuildRowsForUI(seen)
     if restrictToGuild then
       return (rec.guild or "") == curGuild
     else
-      -- Show all players regardless of guild
-      return true
+      -- Show all players from the same realm only
+      return (rec.realm or "") == curRealm
     end
   end
 
