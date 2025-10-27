@@ -176,12 +176,12 @@ end
 local function CollectRowsSince(sinceTs)
     local cache = addon:GetModule("Cache", true)
     local rows = cache and cache:GetActiveRecords(SNAP_MAX_ROWS) or {}
-    local curGuild = (GetGuildInfo("player") or "")
+    -- Don't filter by guild here - we want all data for global leaderboard
     -- Filter by sinceTs if provided
     if sinceTs then
         local filtered = {}
         for _, rec in ipairs(rows) do
-            if (rec.guild or "") == curGuild and (not sinceTs or (rec.ts and rec.ts >= sinceTs)) then
+            if not sinceTs or (rec.ts and rec.ts >= sinceTs) then
                 filtered[#filtered + 1] = rec
             end
         end
@@ -254,7 +254,7 @@ end
 function Network:MarkDeadAndSend()
   local rec = BuildRecordFromPlayer()
   rec.dead = true
-  rec.lowestHealth = 0  -- still set, but UI won’t rely on this anymore
+  rec.lowestHealth = 0  -- still set, but UI won't rely on this anymore
 
   local cache = addon:GetModule("Cache", true)
   if cache then cache:Upsert(rec) end
@@ -282,6 +282,7 @@ function Network:MarkDeadAndSend()
   local payload = encode({ type = "DELTA", rec = rec })
   if payload then
     addon:SendCommMessage(PREFIX, payload, "GUILD")
+    addon:SendCommMessage(PREFIX, payload, "YELL")
     D("Sent DEAD DELTA for", rec.name, "ts", rec.ts)
   end
 end
@@ -315,6 +316,7 @@ function Network:SendOfflineDelta()
   local payload = encode({ type = "DELTA", rec = rec })
   if payload then
     addon:SendCommMessage(PREFIX, payload, "GUILD")
+    addon:SendCommMessage(PREFIX, payload, "YELL")
     D("Sent OFFLINE DELTA for", rec.name, "ts", rec.ts)
   end
 end
@@ -353,6 +355,7 @@ function Network:SendDelta()
   local payload = encode({ type = "DELTA", rec = rec })
   if payload then
     addon:SendCommMessage(PREFIX, payload, "GUILD")
+    addon:SendCommMessage(PREFIX, payload, "YELL")
     D("Sent DELTA for", rec.name, "ts", rec.ts)
   end
 end

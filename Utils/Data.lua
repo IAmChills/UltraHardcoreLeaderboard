@@ -43,8 +43,15 @@ function Data:BuildRowsForUI(seen)
 
   local curGuild = (GetGuildInfo("player") or "")
   local curRealm = (GetRealmName() or "")
+  local restrictToGuild = addon.db.profile.restrictToGuild
+  
   local function inScope(rec)
-    return (rec.guild or "") == curGuild
+    if restrictToGuild then
+      return (rec.guild or "") == curGuild
+    else
+      -- Show all players regardless of guild
+      return true
+    end
   end
 
   -- 1) rows from cache (source of truth for last-known)

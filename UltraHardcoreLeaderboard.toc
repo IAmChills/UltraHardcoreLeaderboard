@@ -1,8 +1,8 @@
 ## Interface: 11508
 ## Title: UltraHardcoreLeaderboard
 ## Author: Chills
-## Version: 1.2.7
-## Notes: Guild live leaderboard for UltraHardcore players
+## Version: 1.2.8
+## Notes: Global leaderboard for Ultra Hardcore players
 ## Dependencies: UltraHardcore
 ## SavedVariables: UltraHardcoreLeaderboardDB, HardcoreAchievementsDB
 ## IconTexture: Interface\AddOns\UltraHardcoreLeaderboard\Images\UltraHardcoreLeaderbaordIcon

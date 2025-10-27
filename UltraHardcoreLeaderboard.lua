@@ -35,6 +35,7 @@ function addon:OnInitialize()
                 hide = false,
             },
             welcomeMessageShown = false,
+            restrictToGuild = false,  -- New setting for guild restriction toggle
         },
     })
     addonIcon:Register("UltraHardcoreLeaderboard", addonLDB, self.db.profile.minimap)
@@ -645,7 +646,12 @@ local function CreateMainFrame()
 
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     f.title:SetPoint("CENTER", f.TitleBg, "CENTER")
-    f.title:SetText("|cfff44336Ultra Hardcore — Live Leaderboard|r")
+    -- Set initial title based on restriction setting
+    if addon.db.profile.restrictToGuild then
+        f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
+    else
+        f.title:SetText("|cfff44336Ultra Hardcore — Global Live Leaderboard|r")
+    end
 
     local totalWidth = 0
     for _, col in ipairs(COLS) do
@@ -747,6 +753,27 @@ local function CreateMainFrame()
         end)
         leaderboardRows[i] = row
     end
+
+    -- Add guild restriction checkbox
+    local guildCheckbox = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
+    guildCheckbox:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 10)
+    guildCheckbox:SetSize(20, 20)
+    guildCheckbox:SetChecked(addon.db.profile.restrictToGuild)
+    
+    local guildCheckboxLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    guildCheckboxLabel:SetPoint("LEFT", guildCheckbox, "RIGHT", 5, 0)
+    guildCheckboxLabel:SetText("Restrict to Guild")
+    
+    guildCheckbox:SetScript("OnClick", function(self)
+        addon.db.profile.restrictToGuild = self:GetChecked()
+        -- Update title based on restriction setting
+        if addon.db.profile.restrictToGuild then
+            f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
+        else
+            f.title:SetText("|cfff44336Ultra Hardcore — Global Live Leaderboard|r")
+        end
+        f.RefreshLeaderboardUI()
+    end)
 
     local hint = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     hint:SetPoint("CENTER", f, "BOTTOM", 0, 24)
