@@ -37,6 +37,13 @@ local function BuildRecordFromPlayer()
   local name = UnitName("player")
   local presetOnly = select(1, GetPresetAndTooltip(name))
   local stats = CharacterStats and CharacterStats:GetCurrentCharacterStats() or {}
+  
+  -- Get achievement data
+  local achievementsCompleted, achievementsTotal = 0, 0
+  if HCA_AchievementCount then
+    achievementsCompleted, achievementsTotal = HCA_AchievementCount()
+  end
+  
   local rec = {
     name                 = name,
     level                = UnitLevel("player") or 0,
@@ -44,7 +51,8 @@ local function BuildRecordFromPlayer()
     lowestHealth         = tonumber(string.format("%.2f", stats.lowestHealth or 100.00)),
     elitesSlain          = stats.elitesSlain or 0,
     enemiesSlain         = stats.enemiesSlain or 0,
-    xpGainedWithoutAddon = stats.xpGainedWithoutAddon or 0,
+    achievementsCompleted = achievementsCompleted,
+    achievementsTotal    = achievementsTotal,
     preset               = presetOnly or "",
     version              = GetAddOnMetadata(BASE_ADDON_NAME, "Version") or "0.0.0",
     LVersion             = GetAddOnMetadata(ADDON_NAME , "Version") or "0.0.0",
@@ -267,7 +275,8 @@ function Network:MarkDeadAndSend()
     lowestHealth = rec.lowestHealth or 0,
     elitesSlain = rec.elitesSlain or 0,
     enemiesSlain = rec.enemiesSlain or 0,
-    xpGainedWithoutAddon = rec.xpGainedWithoutAddon or 0,
+    achievementsCompleted = rec.achievementsCompleted or 0,
+    achievementsTotal = rec.achievementsTotal or 0,
     preset = rec.preset or "Custom",
     last = rec.ts or ((GetServerTime and GetServerTime()) or time()),
     customSettings = rec.customSettings,
@@ -302,7 +311,8 @@ function Network:SendOfflineDelta()
     lowestHealth = rec.lowestHealth or 100,
     elitesSlain = rec.elitesSlain or 0,
     enemiesSlain = rec.enemiesSlain or 0,
-    xpGainedWithoutAddon = rec.xpGainedWithoutAddon or 0,
+    achievementsCompleted = rec.achievementsCompleted or 0,
+    achievementsTotal = rec.achievementsTotal or 0,
     preset = rec.preset or "Custom",
     last = 0,
     customSettings = rec.customSettings,
@@ -341,7 +351,8 @@ function Network:SendDelta()
     lowestHealth = rec.lowestHealth or 100,
     elitesSlain = rec.elitesSlain or 0,
     enemiesSlain = rec.enemiesSlain or 0,
-    xpGainedWithoutAddon = rec.xpGainedWithoutAddon or 0,
+    achievementsCompleted = rec.achievementsCompleted or 0,
+    achievementsTotal = rec.achievementsTotal or 0,
     preset = rec.preset or "Custom",
     last = rec.ts or now,
     customSettings = rec.customSettings,
@@ -430,7 +441,8 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             lowestHealth = tonumber(string.format("%.2f", rec.lowestHealth or 100.00)),
             elitesSlain = rec.elitesSlain or 0,
             enemiesSlain = rec.enemiesSlain or 0,
-            xpGainedWithoutAddon = rec.xpGainedWithoutAddon or 0,
+            achievementsCompleted = rec.achievementsCompleted or 0,
+            achievementsTotal = rec.achievementsTotal or 0,
             preset = rec.preset or "Custom",
             last = rec.ts or Now(),
             customSettings = rec.customSettings,
