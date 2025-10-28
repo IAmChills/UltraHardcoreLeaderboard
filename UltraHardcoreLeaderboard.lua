@@ -35,6 +35,7 @@ function addon:OnInitialize()
                 hide = false,
             },
             welcomeMessageShown = false,
+            restrictToGuild = true,  -- New setting for guild restriction toggle
         },
     })
     addonIcon:Register("UltraHardcoreLeaderboard", addonLDB, self.db.profile.minimap)
@@ -457,15 +458,15 @@ local ROW_HEIGHT = 18
 local VISIBLE_ROWS = 18
 local COLS = {
     { key = "name",    title = "Player Name", width = 100, align = "CENTER" },
-    { key = "level",   title = "Lvl",        width = 40,  align = "CENTER" },
-    { key = "class",   title = "Class",      width = 50,  align = "CENTER" },
+    { key = "level",   title = "Lvl",        width = 50,  align = "CENTER" },
+    { key = "class",   title = "Class",      width = 60,  align = "CENTER" },
     { key = "preset",  title = "Preset",     width = 100,  align = "CENTER" },
-    { key = "seen",    title = "Seen",       width = 50,  align = "CENTER" },
-    { key = "version", title = "Version",    width = 60,  align = "CENTER" },
-    { key = "lowestHealth", title = "Lowest HP", width = 80, align = "CENTER" },
-    { key = "elitesSlain", title = "Elites", width = 50, align = "CENTER" },
-    { key = "enemiesSlain", title = "Enemies", width = 70, align = "CENTER" },
-    { key = "xpGainedWithoutAddon", title = "XP w/o Addon", width = 100, align = "CENTER" },
+    { key = "lowestHealth", title = "Lowest HP", width = 90, align = "CENTER" },
+    { key = "elitesSlain", title = "Elites", width = 60, align = "CENTER" },
+    { key = "enemiesSlain", title = "Enemies", width = 80, align = "CENTER" },
+    { key = "achievements", title = "Achievements", width = 110, align = "CENTER" },
+    { key = "seen",    title = "Updated",       width = 80,  align = "CENTER" },
+    { key = "version", title = "Version",    width = 70,  align = "CENTER" },
 }
 
 local sortState = {
@@ -484,6 +485,8 @@ local function valueForSort(e, key)
         return tostring(e[key] or ""):lower()
     elseif key == "online" then
         return e.online and 1 or 0
+    elseif key == "achievements" then
+        return tonumber(e.achievementsCompleted) or 0
     else
         return tonumber(e[key]) or 0
     end
@@ -634,7 +637,7 @@ end
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetFrameStrata("HIGH")
-    f:SetSize(840, 420)
+    f:SetSize(940, 420)
     f:SetPoint("CENTER")
     f:Hide()
 
@@ -646,7 +649,12 @@ local function CreateMainFrame()
 
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     f.title:SetPoint("CENTER", f.TitleBg, "CENTER")
-    f.title:SetText("|cfff44336Ultra Hardcore — Live Leaderboard|r")
+    -- Set initial title based on restriction setting
+    if addon.db.profile.restrictToGuild then
+        f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
+    else
+        f.title:SetText("|cfff44336Ultra Hardcore — Realm Live Leaderboard|r")
+    end
 
     local totalWidth = 0
     for _, col in ipairs(COLS) do
@@ -749,11 +757,39 @@ local function CreateMainFrame()
         leaderboardRows[i] = row
     end
 
+    -- Add guild restriction checkbox
+    local guildCheckbox = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
+    guildCheckbox:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 8)
+    guildCheckbox:SetSize(20, 20)
+    guildCheckbox:SetChecked(addon.db.profile.restrictToGuild)
+    
+    local guildCheckboxLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    guildCheckboxLabel:SetPoint("LEFT", guildCheckbox, "RIGHT", 5, 0)
+    guildCheckboxLabel:SetText("Restrict to Guild")
+    
+    guildCheckbox:SetScript("OnClick", function(self)
+        addon.db.profile.restrictToGuild = self:GetChecked()
+        -- Update title based on restriction setting
+        if addon.db.profile.restrictToGuild then
+            f.title:SetText("|cfff44336Ultra Hardcore — Guild Live Leaderboard|r")
+        else
+            f.title:SetText("|cfff44336Ultra Hardcore — Realm Live Leaderboard|r")
+        end
+        f.RefreshLeaderboardUI()
+    end)
+
     local hint = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hint:SetPoint("CENTER", f, "BOTTOM", 0, 24)
+    hint:SetPoint("CENTER", f, "BOTTOM", 0, 20)
     hint:SetJustifyH("CENTER")
     hint:SetJustifyV("MIDDLE")
     hint:SetText("|cffbbbbbbData may take up to 60 seconds to fully propagate after logging in|r")
+
+    -- Player count label in bottom right corner
+    local playerCountLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    playerCountLabel:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -15, 14)
+    playerCountLabel:SetJustifyH("RIGHT")
+    playerCountLabel:SetJustifyV("MIDDLE")
+    playerCountLabel:SetText("Players online: 0/0")
 
     f.CloseButton:SetScript("OnClick", function() f:Hide() end)
 
@@ -779,7 +815,8 @@ local function CreateMainFrame()
                 lowestHealth = r.lowestHealth,
                 elitesSlain = r.elitesSlain,
                 enemiesSlain = r.enemiesSlain,
-                xpGainedWithoutAddon = r.xpGainedWithoutAddon,
+                achievementsCompleted = r.achievementsCompleted,
+                achievementsTotal = r.achievementsTotal,
                 preset = preset,
                 seen = r.lastSeenText,
                 version = shownVersion,
@@ -787,10 +824,23 @@ local function CreateMainFrame()
                 online = r.online,
                 lastSeenSec = r.lastSeenSec,
 				dead = r.dead,
+                guild = r.guild,
             })
         end
 
         ApplySort(entries)
+
+        -- Count online and total players
+        local onlineCount = 0
+        local totalCount = #entries
+        for _, e in ipairs(entries) do
+            if e.online then
+                onlineCount = onlineCount + 1
+            end
+        end
+        
+        -- Update player count label
+        playerCountLabel:SetText(string.format("Players online: %d/%d", onlineCount, totalCount))
 
         for _, row in ipairs(leaderboardRows) do row:Hide() end
         local totalHeight = #entries * ROW_HEIGHT
@@ -874,12 +924,13 @@ local function CreateMainFrame()
             row.cols[2]:SetText(e.level)
             row.cols[3]:SetText(e.class)
             row.cols[4]:SetText(e.preset)
-            row.cols[5]:SetText(e.seen)
-            row.cols[6]:SetText(e.version)
-            row.cols[7]:SetText(e.lowestHealth .. "%")
-            row.cols[8]:SetText(e.elitesSlain)
-            row.cols[9]:SetText(e.enemiesSlain)
-            row.cols[10]:SetText(FormatNumber(e.xpGainedWithoutAddon))
+            row.cols[5]:SetText(e.lowestHealth .. "%")
+            row.cols[6]:SetText(e.elitesSlain)
+            row.cols[7]:SetText(e.enemiesSlain)
+            row.cols[8]:SetText(string.format("%d/%d", e.achievementsCompleted or 0, e.achievementsTotal or 0))
+            row.cols[9]:SetText(e.seen)
+            row.cols[10]:SetText(e.version)
+            
 
             row.name = e.name
             row.tooltipText = e.tooltipText
@@ -889,13 +940,22 @@ local function CreateMainFrame()
 
             local isOffline = not row.online
 
+            -- Default colors for all columns
             local r,g,b = isOffline and 0.65 or 1, isOffline and 0.65 or 1, isOffline and 0.65 or 1
+            
+            -- Special colors for dead players
             if isDead(e) then
-                r, g, b = 0.95, 0.26, 0.21
+                r, g, b = 0.95, 0.26, 0.21  -- Red for dead players
             end
 
+            -- Color all columns with default colors
             for _, fs in ipairs(row.cols) do
-            fs:SetTextColor(r, g, b)
+                fs:SetTextColor(r, g, b)
+            end
+            
+            -- Special coloring for player name (first column) - guild members in global view
+            if isGlobalView and isGuildMember then
+                row.cols[1]:SetTextColor(0.4, 0.8, 0.4)  -- Light green for guild member names in global view
             end
             row:SetAlpha(isOffline and 0.75 or 1)
 

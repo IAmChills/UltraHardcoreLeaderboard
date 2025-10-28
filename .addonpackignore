@@ -1,0 +1,7 @@
+# folders
+.git
+
+# files
+*.md
+*.addonpackignore
+*.ps1

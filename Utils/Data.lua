@@ -43,8 +43,15 @@ function Data:BuildRowsForUI(seen)
 
   local curGuild = (GetGuildInfo("player") or "")
   local curRealm = (GetRealmName() or "")
+  local restrictToGuild = addon.db.profile.restrictToGuild
+  
   local function inScope(rec)
-    return (rec.guild or "") == curGuild
+    if restrictToGuild then
+      return (rec.guild or "") == curGuild
+    else
+      -- Show all players from the same realm only
+      return (rec.realm or "") == curRealm
+    end
   end
 
   -- 1) rows from cache (source of truth for last-known)
@@ -59,7 +66,8 @@ function Data:BuildRowsForUI(seen)
                 lowestHealth         = r2(safeN(rec.lowestHealth, 100.00)),
                 elitesSlain          = safeN(rec.elitesSlain, 0),
                 enemiesSlain         = safeN(rec.enemiesSlain, 0),
-                xpGainedWithoutAddon = safeN(rec.xpGainedWithoutAddon, 0),
+                achievementsCompleted = safeN(rec.achievementsCompleted, 0),
+                achievementsTotal = safeN(rec.achievementsTotal, 0),
                 preset               = rec.preset or "",
                 version              = rec.version or "0.0.0",
                 ts                   = rec.ts or 0,
