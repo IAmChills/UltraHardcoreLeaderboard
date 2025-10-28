@@ -557,7 +557,8 @@ local function UpdateHeaderArrows()
     for i, col in ipairs(COLS) do
         local txt = col.title
         if sortState.key == col.key then
-            txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
+            --txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\glues-characterSelect-icon-arrowUp-small-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
+            txt = txt .. (sortState.asc and " |TInterface\\Buttons\\arrow-up-down:30:25|t" or " |TInterface\\Buttons\\arrow-down-down:30:25|t")
         end
         HEADER[i]:SetText(txt)
     end
