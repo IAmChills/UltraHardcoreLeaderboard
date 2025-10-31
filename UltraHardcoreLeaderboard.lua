@@ -560,8 +560,8 @@ local function UpdateHeaderArrows()
     for i, col in ipairs(COLS) do
         local txt = col.title
         if sortState.key == col.key then
-            --txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\glues-characterSelect-icon-arrowUp-small-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
-            txt = txt .. (sortState.asc and " |TInterface\\Buttons\\arrow-up-down:30:25|t" or " |TInterface\\Buttons\\arrow-down-down:30:25|t")
+            txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
+            --txt = txt .. (sortState.asc and " |TInterface\\Buttons\\arrow-up-down:15:15:0:-2|t" or " |TInterface\\Buttons\\arrow-down-down:15:15:0:2|t")
         end
         HEADER[i]:SetText(txt)
     end
@@ -640,6 +640,19 @@ local function CreateMainFrame()
     f:SetSize(940, 420)
     f:SetPoint("CENTER")
     f:Hide()
+
+    	-- Allow closing with ESC key via UISpecialFrames
+	local frameName = f:GetName()
+	local exists = false
+	for i = 1, #UISpecialFrames do
+		if UISpecialFrames[i] == frameName then
+			exists = true
+			break
+		end
+	end
+	if not exists then
+		table.insert(UISpecialFrames, frameName)
+	end
 
     f:SetMovable(true)
     f:EnableMouse(true)
