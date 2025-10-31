@@ -1,7 +1,7 @@
 ﻿## Interface: 11508
 ## Title: UltraHardcoreLeaderboard
 ## Author: Chills
-## Version: 1.3.0
+## Version: 1.3.1
 ## Notes: Global leaderboard for Ultra Hardcore players
 ## Dependencies: UltraHardcore
 ## SavedVariables: UltraHardcoreLeaderboardDB, HardcoreAchievementsDB
