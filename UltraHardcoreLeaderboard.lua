@@ -54,7 +54,8 @@ function addon:OnInitialize()
                 local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
                 local playerCache = cache and cache[name]
                 if playerCache and playerCache.preset then
-                    tooltip:AddLine("|cffffd100UHC Preset: " .. playerCache.preset .. "|r")
+                    tooltip:AddLine("\n|cfff44336UHC: |r" .. playerCache.preset)
+                    GameTooltip:Show()
                 end
             end
         end
