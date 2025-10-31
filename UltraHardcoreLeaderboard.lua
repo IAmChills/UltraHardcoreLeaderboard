@@ -40,6 +40,25 @@ function addon:OnInitialize()
     })
     addonIcon:Register("UltraHardcoreLeaderboard", addonLDB, self.db.profile.minimap)
     self:RegisterComm("UHLB", "OnCommReceived")
+    
+    -- Hook into GameTooltip to show preset for friendly players
+    hooksecurefunc(GameTooltip, "SetUnit", function(tooltip, unit)
+        if not unit then
+            return
+        end
+        
+        -- Check if it's a player (not NPC) and friendly
+        if UnitIsPlayer(unit) and UnitIsFriend("player", unit) then
+            local name = UnitName(unit)
+            if name then
+                local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
+                local playerCache = cache and cache[name]
+                if playerCache and playerCache.preset then
+                    tooltip:AddLine("|cffffd100UHC Preset: " .. playerCache.preset .. "|r")
+                end
+            end
+        end
+    end)
 end
 
 local settingsCheckboxOptions = {
