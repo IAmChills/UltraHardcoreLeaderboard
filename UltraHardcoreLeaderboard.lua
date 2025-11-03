@@ -81,7 +81,11 @@ local settingsCheckboxOptions = {
     { id = 16, name = "Show Incoming Damage Effect", dbSettingsValueName = "showIncomingDamageEffect" },
     { id = 17, name = "Breath Indicator", dbSettingsValueName = "hideBreathIndicator" },
     { id = 18, name = "Show Incoming Healing Effect", dbSettingsValueName = "showHealingIndicator" },
-    { id = 19, name = "First Person Camera", dbSettingsValueName = "setFirstPersonCamera"}
+    { id = 19, name = "First Person Camera", dbSettingsValueName = "setFirstPersonCamera"},
+    { id = 20, name = "Reject buffs from others", dbSettingsValueName = "rejectBuffsFromOthers"},
+    { id = 21, name = "Route Planner", dbSettingsValueName = "routePlanner"},
+    { id = 22, name = "Hide Quest UI", dbSettingsValueName = "completelyRemovePlayerFrame"},
+    { id = 23, name = "Hide Action Bars when not resting", dbSettingsValueName = "completelyRemoveTargetFrame"},
 }
 
 function GetPresetAndTooltip(playerName) -- Made global for achievements addon
@@ -113,6 +117,8 @@ function GetPresetAndTooltip(playerName) -- Made global for achievements addon
             petsDiePermanently = true,
             hideActionBars = true,
             tunnelVisionMaxStrata = true,
+            rejectBuffsFromOthers = true,
+            routePlanner = true,
         },
         { -- Experimental
             hidePlayerFrame = true,
@@ -131,6 +137,10 @@ function GetPresetAndTooltip(playerName) -- Made global for achievements addon
             showIncomingDamageEffect = true,
             showHealingIndicator = true,
             setFirstPersonCamera = true,
+            rejectBuffsFromOthers = true,
+            routePlanner = true,
+            completelyRemovePlayerFrame = true,
+            completelyRemoveTargetFrame = true,
         }
     }
 
