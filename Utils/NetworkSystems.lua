@@ -43,6 +43,11 @@ local function BuildRecordFromPlayer()
   if HCA_AchievementCount then
     achievementsCompleted, achievementsTotal = HCA_AchievementCount()
   end
+
+  local achievementPoints = 0
+  if HCA_GetTotalPoints then
+    achievementPoints = HCA_GetTotalPoints()
+  end
   
   local rec = {
     name                 = name,
@@ -53,6 +58,7 @@ local function BuildRecordFromPlayer()
     enemiesSlain         = stats.enemiesSlain or 0,
     achievementsCompleted = achievementsCompleted,
     achievementsTotal    = achievementsTotal,
+    achievementPoints    = achievementPoints,
     preset               = presetOnly or "",
     version              = GetAddOnMetadata(BASE_ADDON_NAME, "Version") or "0.0.0",
     LVersion             = GetAddOnMetadata(ADDON_NAME , "Version") or "0.0.0",
@@ -277,6 +283,7 @@ function Network:MarkDeadAndSend()
     enemiesSlain = rec.enemiesSlain or 0,
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
+    achievementPoints = rec.achievementPoints or 0,
     preset = rec.preset or "Custom",
     last = rec.ts or ((GetServerTime and GetServerTime()) or time()),
     customSettings = rec.customSettings,
@@ -313,6 +320,7 @@ function Network:SendOfflineDelta()
     enemiesSlain = rec.enemiesSlain or 0,
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
+    achievementPoints = rec.achievementPoints or 0,
     preset = rec.preset or "Custom",
     last = 0,
     customSettings = rec.customSettings,
@@ -353,6 +361,7 @@ function Network:SendDelta()
     enemiesSlain = rec.enemiesSlain or 0,
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
+    achievementPoints = rec.achievementPoints or 0,
     preset = rec.preset or "Custom",
     last = rec.ts or now,
     customSettings = rec.customSettings,
@@ -405,7 +414,9 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             lowestHealth = tonumber(string.format("%.2f", tbl.rec.lowestHealth or 100.00)),
             elitesSlain = tbl.rec.elitesSlain or 0,
             enemiesSlain = tbl.rec.enemiesSlain or 0,
-            xpGainedWithoutAddon = tbl.rec.xpGainedWithoutAddon or 0,
+            achievementsCompleted = tbl.rec.achievementsCompleted or 0,
+            achievementsTotal = tbl.rec.achievementsTotal or 0,
+            achievementPoints = tbl.rec.achievementPoints or 0,
             preset = tbl.rec.preset or "Custom",
             last = markOffline and 0 or (tbl.rec.ts or Now()),
             customSettings = tbl.rec.customSettings,
@@ -443,6 +454,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             enemiesSlain = rec.enemiesSlain or 0,
             achievementsCompleted = rec.achievementsCompleted or 0,
             achievementsTotal = rec.achievementsTotal or 0,
+            achievementPoints = rec.achievementPoints or 0,
             preset = rec.preset or "Custom",
             last = rec.ts or Now(),
             customSettings = rec.customSettings,

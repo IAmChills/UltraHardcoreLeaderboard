@@ -516,7 +516,7 @@ local function valueForSort(e, key)
     elseif key == "online" then
         return e.online and 1 or 0
     elseif key == "achievements" then
-        return tonumber(e.achievementsCompleted) or 0
+        return tonumber(e.achievementPoints) or 0
     else
         return tonumber(e[key]) or 0
     end
@@ -860,6 +860,7 @@ local function CreateMainFrame()
                 enemiesSlain = r.enemiesSlain,
                 achievementsCompleted = r.achievementsCompleted,
                 achievementsTotal = r.achievementsTotal,
+                achievementPoints = r.achievementPoints,
                 preset = preset,
                 seen = r.lastSeenText,
                 version = shownVersion,
@@ -970,7 +971,7 @@ local function CreateMainFrame()
             row.cols[5]:SetText(e.lowestHealth .. "%")
             row.cols[6]:SetText(e.elitesSlain)
             row.cols[7]:SetText(e.enemiesSlain)
-            row.cols[8]:SetText(string.format("%d/%d", e.achievementsCompleted or 0, e.achievementsTotal or 0))
+            row.cols[8]:SetText(string.format("%d pts |cfff44336[%d/%d]|r", e.achievementPoints or 0, e.achievementsCompleted or 0, e.achievementsTotal or 0))
             row.cols[9]:SetText(e.seen)
             row.cols[10]:SetText(e.version)
             
