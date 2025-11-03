@@ -836,6 +836,67 @@ local function CreateMainFrame()
 
     f.CloseButton:SetScript("OnClick", function() f:Hide() end)
 
+    -- Helper function to convert hex color to RGB
+    local function hexToRgb(hex)
+        local r = tonumber(hex:sub(1, 2), 16)
+        local g = tonumber(hex:sub(3, 4), 16)
+        local b = tonumber(hex:sub(5, 6), 16)
+        return r, g, b
+    end
+    
+    -- Helper function to convert RGB to hex
+    local function rgbToHex(r, g, b)
+        return string.format("%02x%02x%02x", math.floor(r + 0.5), math.floor(g + 0.5), math.floor(b + 0.5))
+    end
+    
+    -- Helper function to interpolate between two colors
+    local function interpolateColor(color1, color2, t)
+        -- Clamp t between 0 and 1
+        t = math.max(0, math.min(1, t))
+        
+        local r1, g1, b1 = hexToRgb(color1)
+        local r2, g2, b2 = hexToRgb(color2)
+        
+        local r = r1 + (r2 - r1) * t
+        local g = g1 + (g2 - g1) * t
+        local b = b1 + (b2 - b1) * t
+        
+        return rgbToHex(r, g, b)
+    end
+    
+    -- Helper function to get achievement completion color based on percentage with smooth gradients
+    local function GetAchievementColor(completed, total)
+        if not total or total == 0 then
+            return "9d9d9d"  -- Gray for 0%
+        end
+        
+        local percentage = (completed or 0) / total * 100
+        
+        if percentage == 0 then
+            return "9d9d9d"  -- Gray
+        elseif percentage > 0 and percentage < 20 then
+            -- Gradient from Gray (0%) to White (20%)
+            local t = percentage / 20
+            return interpolateColor("9d9d9d", "ffffff", t)
+        elseif percentage >= 20 and percentage < 40 then
+            -- Gradient from White (20%) to Green (40%)
+            local t = (percentage - 20) / 20
+            return interpolateColor("ffffff", "1eff00", t)
+        elseif percentage >= 40 and percentage < 60 then
+            -- Gradient from Green (40%) to Blue (60%)
+            local t = (percentage - 40) / 20
+            return interpolateColor("1eff00", "0070dd", t)
+        elseif percentage >= 60 and percentage < 80 then
+            -- Gradient from Blue (60%) to Purple (80%)
+            local t = (percentage - 60) / 20
+            return interpolateColor("0070dd", "a335ee", t)
+        else
+            -- Gradient from Purple (80%) to Orange (100%)
+            local t = (percentage - 80) / 20
+            return interpolateColor("a335ee", "ff8000", t)
+        end
+    end
+
     function f.RefreshLeaderboardUI(levelSort)
         local data = addon:GetModule("Data", true)
         local rows = data and data:BuildRowsForUI(seen) or {}
@@ -971,7 +1032,11 @@ local function CreateMainFrame()
             row.cols[5]:SetText(e.lowestHealth .. "%")
             row.cols[6]:SetText(e.elitesSlain)
             row.cols[7]:SetText(e.enemiesSlain)
-            row.cols[8]:SetText(string.format("%d pts |cfff44336[%d/%d]|r", e.achievementPoints or 0, e.achievementsCompleted or 0, e.achievementsTotal or 0))
+            -- Format achievement points with colored completion bracket
+            local completed = e.achievementsCompleted or 0
+            local total = e.achievementsTotal or 0
+            local colorCode = GetAchievementColor(completed, total)
+            row.cols[8]:SetText(string.format("%d pts |cff%s[%d/%d]|r", e.achievementPoints or 0, colorCode, completed, total))
             row.cols[9]:SetText(e.seen)
             row.cols[10]:SetText(e.version)
             
