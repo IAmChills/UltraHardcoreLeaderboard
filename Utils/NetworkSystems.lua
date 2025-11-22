@@ -163,6 +163,7 @@ end
 
 local function GuildOnline()
   local t = {}
+  GuildRoster()
   local num = select(2, GetNumGuildMembers()) or 0
   D("Guild: Online guild members: " .. num)
   if num == 0 then return t end
