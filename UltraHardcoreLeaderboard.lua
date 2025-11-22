@@ -54,7 +54,8 @@ function addon:OnInitialize()
                 local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
                 local playerCache = cache and cache[name]
                 if playerCache and playerCache.preset then
-                    tooltip:AddLine("\n|cfff44336UHC: |r" .. playerCache.preset)
+                    local validIcon = (not playerCache.tampered) and "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:-9|t" or "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:-9|t"
+                    tooltip:AddDoubleLine("\n|cfff44336UHC: |r" .. playerCache.preset, validIcon)
                     GameTooltip:Show()
                 end
             end
@@ -447,6 +448,7 @@ end
 
 -- Function to show welcome message popup on first login
 function addon:ShowWelcomeMessage()
+    if true then return end
     if not self.db.profile.welcomeMessageShown then
         -- Create a simple popup dialog
         StaticPopup_Show("UltraHardcore Leaderboard Message")
@@ -487,6 +489,7 @@ end
 local ROW_HEIGHT = 18
 local VISIBLE_ROWS = 18
 local COLS = {
+    { key = "valid",   title = "Valid",      width = 55,  align = "CENTER" },
     { key = "name",    title = "Player Name", width = 100, align = "CENTER" },
     { key = "level",   title = "Lvl",        width = 50,  align = "CENTER" },
     { key = "class",   title = "Class",      width = 60,  align = "CENTER" },
@@ -511,6 +514,9 @@ end
 local function valueForSort(e, key)
     if key == "seen" then
         return tonumber(e.lastSeenSec) or math.huge
+    elseif key == "valid" then
+        -- Sort valid: false (tampered) = 0, true (not tampered) = 1
+        return (e.tampered or false) and 0 or 1
     elseif key == "name" or key == "class" or key == "preset" or key == "version" then
         return tostring(e[key] or ""):lower()
     elseif key == "online" then
@@ -591,7 +597,7 @@ local function UpdateHeaderArrows()
         local txt = col.title
         if sortState.key == col.key then
             txt = txt .. (sortState.asc and " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollUpButton-Up:30:25|t" or " |TInterface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Up:30:25|t")
-            --txt = txt .. (sortState.asc and " |TInterface\\Buttons\\arrow-up-down:15:15:0:-2|t" or " |TInterface\\Buttons\\arrow-down-down:15:15:0:2|t")
+            --txt = txt .. (sortState.asc and " |TInterface\\AddOns\\UltraHardcoreLeaderboard\\Images\\UI-SortArrow-Up.png:15:10:0:0|t" or " |TInterface\\AddOns\\UltraHardcoreLeaderboard\\Images\\UI-SortArrow.png:15:10:0:0|t")
         end
         HEADER[i]:SetText(txt)
     end
@@ -667,7 +673,7 @@ end
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "UHLB_LeaderboardFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetFrameStrata("HIGH")
-    f:SetSize(940, 420)
+    f:SetSize(990, 420)
     f:SetPoint("CENTER")
     f:Hide()
 
@@ -726,7 +732,7 @@ local function CreateMainFrame()
             else
                 sortState.key = col.key
                 -- Simple convention: numbers default desc for first click, strings asc
-                local numeric = (col.key ~= "name" and col.key ~= "class" and col.key ~= "preset" and col.key ~= "version" and col.key ~= "seen")
+                local numeric = (col.key ~= "name" and col.key ~= "class" and col.key ~= "preset" and col.key ~= "version" and col.key ~= "seen" and col.key ~= "valid")
                 sortState.asc = not numeric
             end
             UpdateHeaderArrows()
@@ -922,6 +928,7 @@ local function CreateMainFrame()
                 achievementsCompleted = r.achievementsCompleted,
                 achievementsTotal = r.achievementsTotal,
                 achievementPoints = r.achievementPoints,
+                tampered = r.tampered,
                 preset = preset,
                 seen = r.lastSeenText,
                 version = shownVersion,
@@ -1025,20 +1032,29 @@ local function CreateMainFrame()
             base = skull .. base
             end
 
-            row.cols[1]:SetText(base)
-            row.cols[2]:SetText(e.level)
-            row.cols[3]:SetText(e.class)
-            row.cols[4]:SetText(e.preset)
-            row.cols[5]:SetText(e.lowestHealth .. "%")
-            row.cols[6]:SetText(e.elitesSlain)
-            row.cols[7]:SetText(e.enemiesSlain)
+            -- Valid column: show ready check texture based on tampered status
+            local validText = ""
+            if not (e.tampered or false) then
+                validText = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:0|t"
+            else
+                validText = "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:0|t"
+            end
+            row.cols[1]:SetText(validText)
+            
+            row.cols[2]:SetText(base)
+            row.cols[3]:SetText(e.level)
+            row.cols[4]:SetText(e.class)
+            row.cols[5]:SetText(e.preset)
+            row.cols[6]:SetText(e.lowestHealth .. "%")
+            row.cols[7]:SetText(e.elitesSlain)
+            row.cols[8]:SetText(e.enemiesSlain)
             -- Format achievement points with colored completion bracket
             local completed = e.achievementsCompleted or 0
             local total = e.achievementsTotal or 0
             local colorCode = GetAchievementColor(completed, total)
-            row.cols[8]:SetText(string.format("%d pts |cff%s[%d/%d]|r", e.achievementPoints or 0, colorCode, completed, total))
-            row.cols[9]:SetText(e.seen)
-            row.cols[10]:SetText(e.version)
+            row.cols[9]:SetText(string.format("%d pts |cff%s[%d/%d]|r", e.achievementPoints or 0, colorCode, completed, total))
+            row.cols[10]:SetText(e.seen)
+            row.cols[11]:SetText(e.version)
             
 
             row.name = e.name

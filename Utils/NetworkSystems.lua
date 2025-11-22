@@ -49,6 +49,12 @@ local function BuildRecordFromPlayer()
     achievementPoints = HCA_GetTotalPoints()
   end
   
+  -- Get tampered state
+  local tampered = false
+  if PlayerStateSnapshot and PlayerStateSnapshot.IsTampered then
+    tampered = PlayerStateSnapshot:IsTampered()
+  end
+  
   local rec = {
     name                 = name,
     level                = UnitLevel("player") or 0,
@@ -59,6 +65,7 @@ local function BuildRecordFromPlayer()
     achievementsCompleted = achievementsCompleted,
     achievementsTotal    = achievementsTotal,
     achievementPoints    = achievementPoints,
+    tampered             = tampered,
     preset               = presetOnly or "",
     version              = GetAddOnMetadata(BASE_ADDON_NAME, "Version") or "0.0.0",
     LVersion             = GetAddOnMetadata(ADDON_NAME , "Version") or "0.0.0",
@@ -285,6 +292,7 @@ function Network:MarkDeadAndSend()
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
     achievementPoints = rec.achievementPoints or 0,
+    tampered = rec.tampered or false,
     preset = rec.preset or "Custom",
     last = rec.ts or ((GetServerTime and GetServerTime()) or time()),
     customSettings = rec.customSettings,
@@ -322,6 +330,7 @@ function Network:SendOfflineDelta()
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
     achievementPoints = rec.achievementPoints or 0,
+    tampered = rec.tampered or false,
     preset = rec.preset or "Custom",
     last = 0,
     customSettings = rec.customSettings,
@@ -363,6 +372,7 @@ function Network:SendDelta()
     achievementsCompleted = rec.achievementsCompleted or 0,
     achievementsTotal = rec.achievementsTotal or 0,
     achievementPoints = rec.achievementPoints or 0,
+    tampered = rec.tampered or false,
     preset = rec.preset or "Custom",
     last = rec.ts or now,
     customSettings = rec.customSettings,
@@ -418,6 +428,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             achievementsCompleted = tbl.rec.achievementsCompleted or 0,
             achievementsTotal = tbl.rec.achievementsTotal or 0,
             achievementPoints = tbl.rec.achievementPoints or 0,
+            tampered = tbl.rec.tampered or false,
             preset = tbl.rec.preset or "Custom",
             last = markOffline and 0 or (tbl.rec.ts or Now()),
             customSettings = tbl.rec.customSettings,
@@ -456,6 +467,7 @@ function Network:OnCommReceived(prefix, msg, dist, sender)
             achievementsCompleted = rec.achievementsCompleted or 0,
             achievementsTotal = rec.achievementsTotal or 0,
             achievementPoints = rec.achievementPoints or 0,
+            tampered = rec.tampered or false,
             preset = rec.preset or "Custom",
             last = rec.ts or Now(),
             customSettings = rec.customSettings,
