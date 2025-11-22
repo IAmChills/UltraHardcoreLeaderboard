@@ -54,7 +54,10 @@ function addon:OnInitialize()
                 local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
                 local playerCache = cache and cache[name]
                 if playerCache and playerCache.preset then
-                    local validIcon = (not playerCache.tampered) and "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:-9|t" or "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:-9|t"
+                    local validIcon = ""
+                    if playerCache.tampered ~= nil then
+                        validIcon = (not playerCache.tampered) and "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:-9|t" or "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:-9|t"
+                    end
                     tooltip:AddDoubleLine("\n|cfff44336UHC: |r" .. playerCache.preset, validIcon)
                     GameTooltip:Show()
                 end
@@ -515,8 +518,14 @@ local function valueForSort(e, key)
     if key == "seen" then
         return tonumber(e.lastSeenSec) or math.huge
     elseif key == "valid" then
-        -- Sort valid: false (tampered) = 0, true (not tampered) = 1
-        return (e.tampered or false) and 0 or 1
+        -- Sort valid: nil = 2 (last), false (not tampered/ReadyCheck) = 1, true (tampered/NotReadyCheck) = 0
+        if e.tampered == nil then
+            return 2  -- nil values sort last
+        elseif e.tampered == false then
+            return 1  -- ReadyCheck sorts before NotReadyCheck
+        else
+            return 0  -- NotReadyCheck sorts first (or we could reverse this)
+        end
     elseif key == "name" or key == "class" or key == "preset" or key == "version" then
         return tostring(e[key] or ""):lower()
     elseif key == "online" then
@@ -1032,12 +1041,14 @@ local function CreateMainFrame()
             base = skull .. base
             end
 
-            -- Valid column: show ready check texture based on tampered status
+            -- Valid column: show ready check texture based on tampered status (only if tampered is explicitly set)
             local validText = ""
-            if not (e.tampered or false) then
-                validText = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:0|t"
-            else
-                validText = "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:0|t"
+            if e.tampered ~= nil then
+                if not e.tampered then
+                    validText = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:0|t"
+                else
+                    validText = "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:0|t"
+                end
             end
             row.cols[1]:SetText(validText)
             
