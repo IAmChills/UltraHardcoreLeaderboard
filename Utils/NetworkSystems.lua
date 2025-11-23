@@ -49,8 +49,8 @@ local function BuildRecordFromPlayer()
     achievementPoints = HCA_GetTotalPoints()
   end
   
-  -- Get tampered state
-  local tampered = false
+  -- Get tampered state (only set if PlayerStateSnapshot is available)
+  local tampered = nil
   if PlayerStateSnapshot and PlayerStateSnapshot.IsTampered then
     tampered = PlayerStateSnapshot:IsTampered()
   end
