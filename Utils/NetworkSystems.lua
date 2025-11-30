@@ -358,6 +358,12 @@ function Network:SendDelta()
   self._lastSend = now
 
   local rec = BuildRecordFromPlayer()
+  
+  -- Check if player is currently dead and preserve dead status
+  if UnitIsDead("player") or UnitIsGhost("player") then
+    rec.dead = true
+    rec.lowestHealth = 0
+  end
 
   local cache = addon:GetModule("Cache", true)
   if cache then cache:Upsert(rec) end
@@ -379,6 +385,7 @@ function Network:SendDelta()
     guild = rec.guild or "",
     realm = rec.realm or "",
     faction = rec.faction or "",
+    dead = rec.dead or false,
   }
   
   if addon.RefreshUIIfVisible then addon:RefreshUIIfVisible() end
@@ -387,7 +394,7 @@ function Network:SendDelta()
   if payload then
     addon:SendCommMessage(PREFIX, payload, "GUILD")
     addon:SendCommMessage(PREFIX, payload, "YELL")
-    D("Sent DELTA for", rec.name, "ts", rec.ts)
+    D("Sent DELTA for", rec.name, "ts", rec.ts, rec.dead and "DEAD" or "")
   end
 end
 
