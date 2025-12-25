@@ -54,11 +54,11 @@ function addon:OnInitialize()
                 local cache = UltraHardcoreLeaderboardDB and UltraHardcoreLeaderboardDB.cache
                 local playerCache = cache and cache[name]
                 if playerCache and playerCache.preset then
-                    local validIcon = ""
-                    if playerCache.tampered ~= nil then
-                        validIcon = (not playerCache.tampered) and "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:-9|t" or "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:-9|t"
-                    end
-                    tooltip:AddDoubleLine("\n|cfff44336UHC: |r" .. playerCache.preset, validIcon)
+                    --local validIcon = ""
+                    -- if playerCache.tampered ~= nil then
+                    --     validIcon = (not playerCache.tampered) and "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:-9|t" or "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:-9|t"
+                    -- end
+                    tooltip:AddDoubleLine("\n|cfff44336UHC: |r" .. playerCache.preset) --, validIcon)
                     GameTooltip:Show()
                 end
             end
@@ -90,6 +90,8 @@ local settingsCheckboxOptions = {
     { id = 21, name = "Route Planner", dbSettingsValueName = "routePlanner"},
     { id = 22, name = "Hide Quest UI", dbSettingsValueName = "completelyRemovePlayerFrame"},
     { id = 23, name = "Hide Action Bars when not resting", dbSettingsValueName = "completelyRemoveTargetFrame"},
+    { id = 24, name = "Hide Player Cast Bar", dbSettingsValueName = "hidePlayerCastBar"},
+    { id = 25, name = "Open World Health Indicators", dbSettingsValueName = "showWildAllyHealthIndicator"},
 }
 
 function GetPresetAndTooltip(playerName) -- Made global for achievements addon
@@ -145,6 +147,8 @@ function GetPresetAndTooltip(playerName) -- Made global for achievements addon
             routePlanner = true,
             completelyRemovePlayerFrame = true,
             completelyRemoveTargetFrame = true,
+            hidePlayerCastBar = true,
+            showWildAllyHealthIndicator = true,
         }
     }
 
@@ -407,9 +411,9 @@ ev:SetScript("OnEvent", function(_, e, key, state)
         if cache and cache.Init then cache:Init() end
 
         -- Show welcome message on first login
-        C_Timer.After(1, function()
-            addon:ShowWelcomeMessage()
-        end)
+        -- C_Timer.After(1, function()
+        --     addon:ShowWelcomeMessage()
+        -- end)
 
         -- Announce 3 seconds after login and every 60 seconds
         C_Timer.After(3, SendAnnounce)
@@ -492,7 +496,7 @@ end
 local ROW_HEIGHT = 18
 local VISIBLE_ROWS = 18
 local COLS = {
-    { key = "valid",   title = "Valid",      width = 55,  align = "CENTER" },
+    --{ key = "valid",   title = "Valid",      width = 55,  align = "CENTER" },
     { key = "name",    title = "Player Name", width = 100, align = "CENTER" },
     { key = "level",   title = "Lvl",        width = 50,  align = "CENTER" },
     { key = "class",   title = "Class",      width = 60,  align = "CENTER" },
@@ -517,15 +521,15 @@ end
 local function valueForSort(e, key)
     if key == "seen" then
         return tonumber(e.lastSeenSec) or math.huge
-    elseif key == "valid" then
-        -- Sort valid: nil = 2 (last), false (not tampered/ReadyCheck) = 1, true (tampered/NotReadyCheck) = 0
-        if e.tampered == nil then
-            return 2  -- nil values sort last
-        elseif e.tampered == false then
-            return 1  -- ReadyCheck sorts before NotReadyCheck
-        else
-            return 0  -- NotReadyCheck sorts first (or we could reverse this)
-        end
+    -- elseif key == "valid" then
+    --     -- Sort valid: nil = 2 (last), false (not tampered/ReadyCheck) = 1, true (tampered/NotReadyCheck) = 0
+    --     if e.tampered == nil then
+    --         return 2  -- nil values sort last
+    --     elseif e.tampered == false then
+    --         return 1  -- ReadyCheck sorts before NotReadyCheck
+    --     else
+    --         return 0  -- NotReadyCheck sorts first (or we could reverse this)
+    --     end
     elseif key == "name" or key == "class" or key == "preset" or key == "version" then
         return tostring(e[key] or ""):lower()
     elseif key == "online" then
@@ -937,7 +941,7 @@ local function CreateMainFrame()
                 achievementsCompleted = r.achievementsCompleted,
                 achievementsTotal = r.achievementsTotal,
                 achievementPoints = r.achievementPoints,
-                tampered = r.tampered,
+                --tampered = r.tampered,
                 preset = preset,
                 seen = r.lastSeenText,
                 version = shownVersion,
@@ -1042,30 +1046,30 @@ local function CreateMainFrame()
             end
 
             -- Valid column: show ready check texture based on tampered status (only if tampered is explicitly set)
-            local validText = ""
-            if e.tampered ~= nil then
-                if not e.tampered then
-                    validText = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:0|t"
-                else
-                    validText = "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:0|t"
-                end
-            end
-            row.cols[1]:SetText(validText)
+            -- local validText = ""
+            -- if e.tampered ~= nil then
+            --     if not e.tampered then
+            --         validText = "|TInterface\\RAIDFRAME\\ReadyCheck-Ready.blp:14:14:0:0|t"
+            --     else
+            --         validText = "|TInterface\\RAIDFRAME\\ReadyCheck-NotReady.blp:14:14:0:0|t"
+            --     end
+            -- end
+            --row.cols[1]:SetText(validText)
             
-            row.cols[2]:SetText(base)
-            row.cols[3]:SetText(e.level)
-            row.cols[4]:SetText(e.class)
-            row.cols[5]:SetText(e.preset)
-            row.cols[6]:SetText(e.lowestHealth .. "%")
-            row.cols[7]:SetText(e.elitesSlain)
-            row.cols[8]:SetText(e.enemiesSlain)
+            row.cols[1]:SetText(base)
+            row.cols[2]:SetText(e.level)
+            row.cols[3]:SetText(e.class)
+            row.cols[4]:SetText(e.preset)
+            row.cols[5]:SetText(e.lowestHealth .. "%")
+            row.cols[6]:SetText(e.elitesSlain)
+            row.cols[7]:SetText(e.enemiesSlain)
             -- Format achievement points with colored completion bracket
             local completed = e.achievementsCompleted or 0
             local total = e.achievementsTotal or 0
             local colorCode = GetAchievementColor(completed, total)
-            row.cols[9]:SetText(string.format("%d pts |cff%s[%d/%d]|r", e.achievementPoints or 0, colorCode, completed, total))
-            row.cols[10]:SetText(e.seen)
-            row.cols[11]:SetText(e.version)
+            row.cols[8]:SetText(string.format("%d pts |cff%s[%d/%d]|r", e.achievementPoints or 0, colorCode, completed, total))
+            row.cols[9]:SetText(e.seen)
+            row.cols[10]:SetText(e.version)
             
 
             row.name = e.name
